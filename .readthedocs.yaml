@@ -2,4 +2,8 @@ build:
   os: ubuntu-lts-latest
   tools:
     python: latest
+    rust: latest
 version: 2
+  commands:
+    - mkdir -p $READTHEDOCS_OUTPUT/html/
+    - echo "<!DOCTYPE html><html><head><title>conspire</title></head><body>Hello, world!</body></html>" > $READTHEDOCS_OUTPUT/html/index.html
