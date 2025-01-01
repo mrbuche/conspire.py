@@ -1,12 +1,11 @@
+mod constitutive;
+
 use pyo3::prelude::*;
 
-#[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-    Ok((a + b).to_string())
-}
-
 #[pymodule]
-fn conspire(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
-    Ok(())
+fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
+    constitutive::register_module(py, m)?;
+    py.import("sys")?
+        .getattr("modules")?
+        .set_item("conspire.constitutive", m)
 }

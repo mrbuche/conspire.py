@@ -8,8 +8,8 @@ version = "0.1.4"
 crate-type = ["cdylib"]
 
 [dependencies]
-conspire = {version = "=0.5.1", features = ["constitutive"]}
-pyo3 = {version = "=0.23", features = ["extension-module"], optional = true}
+conspire = { version = "=0.5.1", features = ["constitutive"] }
+pyo3 = { version = "=0.23.3", features = ["extension-module"] }
 
 [profile.release]
 codegen-units = 1
