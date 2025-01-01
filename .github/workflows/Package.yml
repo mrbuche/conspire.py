@@ -1,0 +1,54 @@
+name: Package
+on:
+  pull_request:
+    branches: main
+  release:
+    types: published
+env:
+  CARGO_TERM_COLOR: always
+jobs:
+  Wheels:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          default: true
+          toolchain: stable
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Maturin
+        run: pip install maturin
+      - name: Build
+        run: maturin build --release --features python
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-${{ matrix.python-version }}-wheel
+          path: target/wheels
+  Twine:
+    needs: Wheels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+      - uses: actions/setup-python@v5
+        with:
+          check-latest: true
+          python-version: 3.13
+      - name: Wheels
+        run: mkdir -p wheelhouse/ && mv ./*-wheel*/*.whl wheelhouse/
+      - name: Twine
+        run: pip install twine
+      - name: Check
+        run: twine check wheelhouse/*.whl
+      - name: Upload
+        if: github.event_name == 'release'
+        run: twine upload -u __token__ -p ${{ secrets.PYPI_TOKEN }} wheelhouse/*.whl
