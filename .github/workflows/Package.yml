@@ -29,7 +29,7 @@ jobs:
       - name: Maturin
         run: pip install maturin
       - name: Build
-        run: maturin build --release --features python
+        run: maturin build --release
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}-${{ matrix.python-version }}-wheel
