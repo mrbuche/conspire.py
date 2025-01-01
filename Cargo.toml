@@ -1,0 +1,18 @@
+[package]
+edition = "2021"
+name = "conspire"
+publish = false
+version = "0.1.2"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+conspire = {version = "=0.5.1", features = ["constitutive"]}
+pyo3 = {version = "=0.23", features = ["extension-module"], optional = true}
+
+[profile.release]
+codegen-units = 1
+lto = true
+panic = "abort"
+strip = "symbols"
