@@ -17,6 +17,7 @@ classifiers = [
 ]
 description = "c o n s p i r e"
 dependencies = ["numpy"]
+dynamic = ["version"]
 name = "conspire"
 requires-python = ">=3.8"
 
@@ -24,7 +25,7 @@ requires-python = ">=3.8"
 docs = ["matplotlib"]
 
 [project.urls]
-Documentation = 'https://mrbuche.readthedocs.io'
+Documentation = 'https://conspire.readthedocs.io'
 Homepage = 'https://mrbuche.github.io/conspire'
 Repository = 'https://github.com/mrbuche/conspire.py'
 
