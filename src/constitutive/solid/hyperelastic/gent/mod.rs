@@ -5,9 +5,9 @@ use conspire::{
         Constitutive,
     },
     math::TensorArray,
-    mechanics::DeformationGradient,
+    // mechanics::DeformationGradient,
 };
-use numpy::PyArray2;
+use numpy::{PyArray2, PyReadonlyArray2};
 use pyo3::prelude::*;
 
 #[pyclass]
@@ -30,15 +30,17 @@ impl Gent {
     fn helmholtz_free_energy_density<'py>(
         &self,
         py: Python<'py>,
+        deformation_gradient: PyReadonlyArray2<f64>,
     ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
+        let f = deformation_gradient
+            .as_array()
+            .outer_iter()
+            .map(|entry| entry.iter().copied().collect())
+            .collect();
         Ok(PyArray2::from_vec2(
             py,
             &GentConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
-                .calculate_cauchy_stress(&DeformationGradient::new([
-                    [1.0, 0.0, 0.0],
-                    [0.0, 1.0, 0.0],
-                    [0.0, 0.0, 1.0],
-                ]))?
+                .calculate_cauchy_stress(&f)?
                 .as_array()
                 .iter()
                 .map(|entry| entry.to_vec())
