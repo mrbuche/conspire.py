@@ -1,6 +1,8 @@
 mod constitutive;
 
 use ::conspire::constitutive::ConstitutiveError;
+use ndarray::ShapeError;
+use numpy::FromVecError;
 use pyo3::{exceptions::PyTypeError, prelude::*};
 
 #[pymodule]
@@ -25,6 +27,22 @@ impl From<ConstitutiveError> for PyErrGlue {
     fn from(error: ConstitutiveError) -> Self {
         PyErrGlue {
             message: format!("{:?}\x1B[A", error),
+        }
+    }
+}
+
+impl From<ShapeError> for PyErrGlue {
+    fn from(error: ShapeError) -> Self {
+        PyErrGlue {
+            message: error.to_string(),
+        }
+    }
+}
+
+impl From<FromVecError> for PyErrGlue {
+    fn from(error: FromVecError) -> Self {
+        PyErrGlue {
+            message: error.to_string(),
         }
     }
 }
