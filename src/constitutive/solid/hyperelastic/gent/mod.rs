@@ -83,6 +83,9 @@ impl Gent {
             )?,
         ))
     }
+    /// $$
+    /// \mathbf{P} = J\boldsymbol{\sigma}\cdot\mathbf{F}^{-T}
+    /// $$
     fn first_piola_kirchoff_stress<'py>(
         &self,
         py: Python<'py>,
@@ -94,6 +97,9 @@ impl Gent {
                 .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
+    /// $$
+    /// \mathcal{C}_{iJkL} = \frac{\partial P_{iJ}}{\partial F_{kL}} = J \mathcal{T}_{iskL} F_{sJ}^{-T} + P_{iJ} F_{kL}^{-T} - P_{iL} F_{kJ}^{-T}
+    /// $$
     fn first_piola_kirchoff_tangent_stiffness<'py>(
         &self,
         py: Python<'py>,
@@ -116,6 +122,9 @@ impl Gent {
             )?,
         ))
     }
+    /// $$
+    /// \mathbf{S} = \mathbf{F}^{-1}\cdot\mathbf{P}
+    /// $$
     fn second_piola_kirchoff_stress<'py>(
         &self,
         py: Python<'py>,
@@ -127,6 +136,9 @@ impl Gent {
                 .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
+    /// $$
+    /// \mathcal{G}_{IJkL} = \frac{\partial S_{IJ}}{\partial F_{kL}} = \mathcal{C}_{mJkL}F_{mI}^{-T} - S_{LJ}F_{kI}^{-T} = J \mathcal{T}_{mnkL} F_{mI}^{-T} F_{nJ}^{-T} + S_{IJ} F_{kL}^{-T} - S_{IL} F_{kJ}^{-T} -S_{LJ} F_{kI}^{-T}
+    /// $$
     fn second_piola_kirchoff_tangent_stiffness<'py>(
         &self,
         py: Python<'py>,
