@@ -10,7 +10,6 @@ use ndarray::Array;
 use numpy::{PyArray2, PyArray4};
 use pyo3::prelude::*;
 
-#[pyclass]
 /// The Fung hyperelastic constitutive model.[^fung]
 ///
 /// [^fung]: Y.C. Fung, [Am. J. Physiol. **213**, 1532 (1967)](https://doi.org/10.1152/ajplegacy.1967.213.6.1532).
@@ -29,6 +28,7 @@ use pyo3::prelude::*;
 ///
 /// **Notes**
 /// - The Fung model reduces to the [Neo-Hookean model](#NeoHookean) when $\mu_m\to 0$ or $c\to 0$.
+#[pyclass]
 pub struct Fung {
     bulk_modulus: f64,
     shear_modulus: f64,

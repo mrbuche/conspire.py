@@ -11,12 +11,20 @@ use pyo3::{exceptions::PyTypeError, prelude::*};
 /// [![release](https://img.shields.io/pypi/v/conspire?color=blue&label=release)](https://pypi.org/project/conspire)
 ///
 /// The Python interface to [conspire](https://mrbuche.github.io/conspire).
+/// <hr>
+/// - [constitutive](conspire/constitutive.html) - Constitutive model library.
 #[pymodule]
 fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
-    constitutive::register_module(py, m)?;
+    let submodule_constitutive = PyModule::new(py, "constitutive")?;
+    submodule_constitutive.setattr(
+        "__doc__",
+        "Constitutive model library.\n\n - [solid](constitutive/solid.html) - Solid constitutive models.",
+    )?;
+    m.add_submodule(&submodule_constitutive)?;
+    constitutive::register_module(py, &submodule_constitutive)?;
     py.import("sys")?
         .getattr("modules")?
-        .set_item("conspire.constitutive", m)
+        .set_item("conspire.constitutive", submodule_constitutive)
 }
 
 pub struct PyErrGlue {

@@ -7,7 +7,6 @@ use ndarray::Array;
 use numpy::{PyArray2, PyArray4};
 use pyo3::prelude::*;
 
-#[pyclass]
 /// The Almansi-Hamel elastic constitutive model.
 ///
 /// **Parameters**
@@ -22,6 +21,7 @@ use pyo3::prelude::*;
 ///
 /// **Notes**
 /// - The Almansi-Hamel strain measure is given by $\mathbf{e}=\tfrac{1}{2}(\mathbf{1}-\mathbf{B}^{-1})$.
+#[pyclass]
 pub struct AlmansiHamel {
     bulk_modulus: f64,
     shear_modulus: f64,

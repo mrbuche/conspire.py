@@ -10,7 +10,6 @@ use ndarray::Array;
 use numpy::{PyArray2, PyArray4};
 use pyo3::prelude::*;
 
-#[pyclass]
 /// The Gent hyperelastic constitutive model.[^gent]
 ///
 /// [^gent]: A.N. Gent, [Rubber Chem. Technol. **69**, 59 (1996)](https://doi.org/10.5254/1.3538357).
@@ -28,6 +27,7 @@ use pyo3::prelude::*;
 ///
 /// **Notes**
 /// - The Gent model reduces to the [Neo-Hookean model](#NeoHookean) when $J_m\to\infty$.
+#[pyclass]
 pub struct Gent {
     bulk_modulus: f64,
     shear_modulus: f64,
