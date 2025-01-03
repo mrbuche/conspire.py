@@ -5,8 +5,8 @@ build:
     python: latest
     rust: latest
   commands:
-    - pip install cmake maturin[patchelf]
-    - maturin build --features python --release
+    - pip install maturin
+    - maturin build --release
     - pip install .[docs]
     - mkdir -p $READTHEDOCS_OUTPUT/html/
     - pdoc conspire --math --no-show-source --output-dir $READTHEDOCS_OUTPUT/html/ --template-directory docs/
