@@ -5,7 +5,7 @@ build:
     python: latest
     rust: latest
   commands:
-    - pip install maturin
+    - pip install cmake maturin[patchelf]
     - maturin build --features python --release
     - pip install .[docs]
     - mkdir -p $READTHEDOCS_OUTPUT/html/
