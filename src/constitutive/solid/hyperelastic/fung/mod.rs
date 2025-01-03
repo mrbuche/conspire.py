@@ -2,7 +2,7 @@ use crate::PyErrGlue;
 use conspire::constitutive::{
     solid::{
         elastic::Elastic,
-        hyperelastic::{Gent as GentConspire, Hyperelastic},
+        hyperelastic::{Fung as FungConspire, Hyperelastic},
     },
     Constitutive,
 };
@@ -11,14 +11,15 @@ use numpy::{PyArray2, PyArray4};
 use pyo3::prelude::*;
 
 #[pyclass]
-/// The Gent hyperelastic constitutive model.[^gent]
+/// The Fung hyperelastic constitutive model.[^fung]
 ///
-/// [^gent]: A.N. Gent, [Rubber Chem. Technol. **69**, 59 (1996)](https://doi.org/10.5254/1.3538357).
+/// [^fung]: Y.C. Fung, [Am. J. Physiol. **213**, 1532 (1967)](https://doi.org/10.1152/ajplegacy.1967.213.6.1532).
 ///
 /// **Parameters**
 /// - The bulk modulus $\kappa$.
 /// - The shear modulus $\mu$.
-/// - The extensibility $J_m$.
+/// - The extra modulus $\mu_m$.
+/// - The exponent $c$.
 ///
 /// **External variables**
 /// - The deformation gradient $\mathbf{F}$.
@@ -27,15 +28,15 @@ use pyo3::prelude::*;
 /// - None.
 ///
 /// **Notes**
-/// - The Gent model reduces to the [Neo-Hookean model](#NeoHookean) when $J_m\to\infty$.
-pub struct Gent {
+/// - The Fung model reduces to the [Neo-Hookean model](#NeoHookean) when $\mu_m\to 0$ or $c\to 0$.
+pub struct Fung {
     bulk_modulus: f64,
     shear_modulus: f64,
     extensibility: f64,
 }
 
 #[pymethods]
-impl Gent {
+impl Fung {
     #[new]
     fn new(bulk_modulus: f64, shear_modulus: f64, extensibility: f64) -> Self {
         Self {
@@ -45,7 +46,7 @@ impl Gent {
         }
     }
     /// $$
-    /// \boldsymbol{\sigma}(\mathbf{F}) = \frac{J^{-1}\mu J_m {\mathbf{B}^* }'}{J_m - \mathrm{tr}(\mathbf{B}^* ) + 3} + \frac{\kappa}{2}\left(J - \frac{1}{J}\right)\mathbf{1}
+    /// \boldsymbol{\sigma}(\mathbf{F}) = \frac{1}{J}\left[\mu + \mu_m\left(e^{c[\mathrm{tr}(\mathbf{B}^* ) - 3]} - 1\right)\right]{\mathbf{B}^* }' + \frac{\kappa}{2}\left(J - \frac{1}{J}\right)\mathbf{1}
     /// $$
     fn cauchy_stress<'py>(
         &self,
@@ -53,13 +54,13 @@ impl Gent {
         deformation_gradient: Vec<Vec<f64>>,
     ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
         let cauchy_stress: Vec<Vec<f64>> =
-            GentConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
+            FungConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
                 .calculate_cauchy_stress(&deformation_gradient.into())?
                 .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
     /// $$
-    /// \mathcal{T}_{ijkL}(\mathbf{F}) = \frac{J^{-5/3}\mu J_m}{J_m - \mathrm{tr}(\mathbf{B}^* ) + 3}\Bigg[ \delta_{ik}F_{jL} + \delta_{jk}F_{iL} - \frac{2}{3}\,\delta_{ij}F_{kL} + \frac{2{B_{ij}^* }' F_{kL}}{J_m - \mathrm{tr}(\mathbf{B}^* ) + 3} - \left(\frac{5}{3} + \frac{2}{3}\frac{\mathrm{tr}(\mathbf{B}^* )}{J_m - \mathrm{tr}(\mathbf{B}^* ) + 3}\right) J^{2/3} {B_{ij}^* }' F_{kL}^{-T} \Bigg] + \frac{\kappa}{2} \left(J + \frac{1}{J}\right)\delta_{ij}F_{kL}^{-T}
+    /// \mathcal{T}_{ijkL}(\mathbf{F}) = \frac{1}{J^{5/3}}\left[\mu + \mu_m\left(e^{c[\mathrm{tr}(\mathbf{B}^* ) - 3]} - 1\right)\right]\left(\delta_{ik}F_{jL} + \delta_{jk}F_{iL} - \frac{2}{3}\,\delta_{ij}F_{kL} - \frac{5}{3} \, B_{ij}'F_{kL}^{-T} \right) + \frac{2c\mu_m}{J^{7/3}}\,e^{c[\mathrm{tr}(\mathbf{B}^* ) - 3]}B_{ij}'B_{km}'F_{mL}^{-T} + \frac{\kappa}{2} \left(J + \frac{1}{J}\right)\delta_{ij}F_{kL}^{-T}
     /// $$
     fn cauchy_tangent_stiffness<'py>(
         &self,
@@ -67,7 +68,7 @@ impl Gent {
         deformation_gradient: Vec<Vec<f64>>,
     ) -> Result<Bound<'py, PyArray4<f64>>, PyErrGlue> {
         let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<f64>>>> =
-            GentConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
+            FungConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
                 .calculate_cauchy_tangent_stiffness(&deformation_gradient.into())?
                 .into();
         Ok(PyArray4::from_array(
@@ -92,7 +93,7 @@ impl Gent {
         deformation_gradient: Vec<Vec<f64>>,
     ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
         let cauchy_stress: Vec<Vec<f64>> =
-            GentConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
+            FungConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
                 .calculate_first_piola_kirchoff_stress(&deformation_gradient.into())?
                 .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
@@ -106,7 +107,7 @@ impl Gent {
         deformation_gradient: Vec<Vec<f64>>,
     ) -> Result<Bound<'py, PyArray4<f64>>, PyErrGlue> {
         let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<f64>>>> =
-            GentConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
+            FungConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
                 .calculate_first_piola_kirchoff_tangent_stiffness(&deformation_gradient.into())?
                 .into();
         Ok(PyArray4::from_array(
@@ -131,7 +132,7 @@ impl Gent {
         deformation_gradient: Vec<Vec<f64>>,
     ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
         let cauchy_stress: Vec<Vec<f64>> =
-            GentConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
+            FungConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
                 .calculate_second_piola_kirchoff_stress(&deformation_gradient.into())?
                 .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
@@ -145,7 +146,7 @@ impl Gent {
         deformation_gradient: Vec<Vec<f64>>,
     ) -> Result<Bound<'py, PyArray4<f64>>, PyErrGlue> {
         let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<f64>>>> =
-            GentConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
+            FungConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
                 .calculate_second_piola_kirchoff_tangent_stiffness(&deformation_gradient.into())?
                 .into();
         Ok(PyArray4::from_array(
@@ -162,14 +163,14 @@ impl Gent {
         ))
     }
     /// $$
-    /// a(\mathbf{F}) = -\frac{\mu J_m}{2}\,\ln\left[1 - \frac{\mathrm{tr}(\mathbf{B}^* ) - 3}{J_m}\right] + \frac{\kappa}{2}\left[\frac{1}{2}\left(J^2 - 1\right) - \ln J\right]
+    /// a(\mathbf{F}) = \frac{\mu - \mu_m}{2}\left[\mathrm{tr}(\mathbf{B}^* ) - 3\right] + \frac{\mu_m}{2c}\left(e^{c[\mathrm{tr}(\mathbf{B}^* ) - 3]} - 1\right)
     /// $$
     fn helmholtz_free_energy_density(
         &self,
         deformation_gradient: Vec<Vec<f64>>,
     ) -> Result<f64, PyErrGlue> {
         Ok(
-            GentConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
+            FungConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
                 .calculate_helmholtz_free_energy_density(&deformation_gradient.into())?,
         )
     }
