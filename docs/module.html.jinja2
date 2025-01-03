@@ -8,3 +8,25 @@
         {{ nav_members(module.members.values()) }}
     {% endif %}
 {% endblock %}
+{% defaultmacro nav_members(members) %}
+    <ul class="memberlist">
+        {% for m in members if is_public(m) | trim %}
+            <li>
+                {% if m.kind == "class" %}
+                    <a class="class" href="#{{ m.qualname }}">{{ m.qualname }}</a>
+                    <!--
+                    {% if m.own_members %}
+                        {{ nav_members(m.own_members) | indent(12) }}
+                    {% endif %}
+                    -->
+                {% elif m.kind == "module" %}
+                    <a class="module" href="#{{ m.name }}">{{ m.name }}</a>
+                {% elif m.name == "__init__" %}
+                    <a class="function" href="#{{ m.qualname }}">{{ m.qualname.split(".")[-2] }}</a>
+                {% else %}
+                    <a class="{{ m.kind }}" href="#{{ m.qualname }}">{{ m.name }}</a>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% enddefaultmacro %}
