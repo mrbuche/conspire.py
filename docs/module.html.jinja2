@@ -1,0 +1,17 @@
+{% extends "default/module.html.jinja2" %}
+{% block title %}
+    conspire - Python
+{% endblock %}
+{% block nav_members %}
+    {% if module.members %}
+        <h2>conspire latest</h2>
+        {{ nav_members(module.members.values()) }}
+    {% endif %}
+{% endblock %}
+{% block nav_title %}
+    {% if logo %}
+        {% if logo_link %}<a href="{{ logo_link }}">{% endif %}
+            <img src="{{ logo }}" class="logo" alt="project logo" width="100"/>
+        {% if logo_link %}</a>{% endif %}
+    {% endif %}
+{% endblock %}
