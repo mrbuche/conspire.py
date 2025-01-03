@@ -10,4 +10,4 @@ build:
     - pip install .[docs]
     - mkdir -p $READTHEDOCS_OUTPUT/html/
     - pdoc conspire --math --no-show-source --output-dir $READTHEDOCS_OUTPUT/html/ --template-directory docs/
-    - VERSION=$(cargo tree | grep conspire | cut -d " " -f 2 | cut -d "v" -f 2) && sed -i 's/conspire latest/conspire $VERSION/' $READTHEDOCS_OUTPUT/html/conspire.html
+    - VERSION=$(cargo tree | grep conspire | head -1 | cut -d " " -f 2 | cut -d "v" -f 2) && sed -i "s/conspire latest/conspire $VERSION/" $READTHEDOCS_OUTPUT/html/conspire.html
