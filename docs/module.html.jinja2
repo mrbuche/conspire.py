@@ -8,10 +8,3 @@
         {{ nav_members(module.members.values()) }}
     {% endif %}
 {% endblock %}
-{% block nav_title %}
-    {% if logo %}
-        {% if logo_link %}<a href="{{ logo_link }}">{% endif %}
-            <img src="{{ logo }}" class="logo" alt="project logo" width="100"/>
-        {% if logo_link %}</a>{% endif %}
-    {% endif %}
-{% endblock %}
