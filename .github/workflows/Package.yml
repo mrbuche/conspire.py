@@ -39,7 +39,7 @@ jobs:
           name: ${{ matrix.os }}-${{ matrix.python-version }}-wheel
           path: target/wheels/
   Twine:
-    needs: Wheels
+    needs: Package
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
