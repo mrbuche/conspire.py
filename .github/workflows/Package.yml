@@ -36,7 +36,7 @@ jobs:
         run: twine check target/wheels/*
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-${{ matrix.python-version }}-wheel
+          name: ${{ matrix.os }}-${{ matrix.python-version }}-dist
           path: target/wheels/
   Twine:
     needs: Package
@@ -48,13 +48,13 @@ jobs:
           check-latest: true
           python-version: 3.13
       - name: Requirements
-        run: pip install build twine
+        run: pip install twine
       - name: Dist
         run: rm -fr dist/ && mkdir dist/
       - name: Source
-        run: python -m build . --outdir dist/ --sdist
+        run: mv ./*-dist*/*.tar.gz dist/
       - name: Wheels
-        run: mv ./*-wheel*/*.whl dist/
+        run: mv ./*-dist*/*.whl dist/
       - name: Upload
         if: github.event_name == 'release'
-        run: twine upload -u __token__ -p ${{ secrets.PYPI_TOKEN }} wheelhouse/*.whl
+        run: twine upload -u __token__ -p ${{ secrets.PYPI_TOKEN }} dist/*
