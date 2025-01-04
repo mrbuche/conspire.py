@@ -26,7 +26,7 @@ jobs:
       - name: Source
         run: python -m build . --sdist
       - name: Check
-        run: twine check target/wheels/*
+        run: twine check dist/*
       - uses: actions/upload-artifact@v4
         with:
           name: dist
