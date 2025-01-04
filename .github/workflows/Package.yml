@@ -26,8 +26,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Maturin
-        run: pip install maturin
+      - name: Requirements
+        run: pip install build maturin
       - name: Source
         run: python -m build . --outdir target/wheels/ --sdist
       - name: Wheel
