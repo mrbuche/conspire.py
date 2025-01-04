@@ -47,14 +47,14 @@ jobs:
         with:
           check-latest: true
           python-version: 3.13
+      - name: Requirements
+        run: pip install build twine
       - name: Dist
         run: rm -fr dist/ && mkdir dist/
       - name: Source
         run: python -m build . --outdir dist/ --sdist
       - name: Wheels
         run: mv ./*-wheel*/*.whl dist/
-      - name: Twine
-        run: pip install twine
       - name: Upload
         if: github.event_name == 'release'
         run: twine upload -u __token__ -p ${{ secrets.PYPI_TOKEN }} wheelhouse/*.whl
