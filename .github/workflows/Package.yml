@@ -22,7 +22,7 @@ jobs:
         with:
           python-version: 3.13
       - name: Requirements
-        run: pip install build maturin twine
+        run: pip install --upgrade build maturin pip twine
       - name: Source
         run: python -m build . --sdist
       - name: Check
@@ -51,7 +51,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Requirements
-        run: pip install build maturin twine
+        run: pip install --upgrade build maturin pip twine
       - name: Wheel
         run: maturin build --release
       - name: Check
@@ -70,7 +70,7 @@ jobs:
           check-latest: true
           python-version: 3.13
       - name: Requirements
-        run: pip install twine
+        run: pip install --upgrade pip twine
       - name: Wheels
         run: mv ./*-dist*/*.whl dist/
       - name: Upload
