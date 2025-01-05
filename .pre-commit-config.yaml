@@ -12,3 +12,10 @@ repos:
     -   id: clippy
         args: ['--', '-D',  'warnings']
     -   id: fmt
+-   repo: local
+    hooks:
+    -   id: pycodestyle
+        name: pycodestyle
+        entry: pycodestyle tests
+        language: system
+        pass_filenames: false

@@ -31,3 +31,11 @@ Repository = 'https://github.com/mrbuche/conspire.py'
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
+
+[tool.pytest.ini_options]
+python_files = [
+  '*.py'
+]
+testpaths = [
+  'tests/'
+]

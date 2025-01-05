@@ -31,7 +31,7 @@ use pyo3::prelude::*;
 pub struct Yeoh {
     bulk_modulus: f64,
     shear_modulus: f64,
-    extensibility: f64,
+    extra_moduli: &[f64],
 }
 
 #[pymethods]
