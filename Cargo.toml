@@ -8,7 +8,7 @@ version = "0.2.1"
 crate-type = ["cdylib"]
 
 [dependencies]
-conspire = { features = ["constitutive"], git = "https://github.com/mrbuche/conspire.rs.git", rev = "88bc3e41db2b9aeba086ea28f572db6f26542855" }
+conspire = { features = ["constitutive"], git = "https://github.com/mrbuche/conspire.rs.git", rev = "eb45cf5efa683695631958bcaa7d22e5dbb7bdba" }
 ndarray = { version = "0.16.1" }
 numpy = { version = "=0.23.0" }
 pyo3 = { features = ["extension-module"], version = "=0.23.4" }
