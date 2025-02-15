@@ -1,4 +1,5 @@
 mod constitutive;
+mod math;
 
 use ::conspire::constitutive::ConstitutiveError;
 use ndarray::ShapeError;
@@ -12,16 +13,27 @@ use pyo3::{exceptions::PyTypeError, prelude::*};
 ///
 /// The Python interface to [conspire](https://mrbuche.github.io/conspire).
 /// <hr>
+/// - [math](conspire/math.html) - Mathematics library.
 /// - [constitutive](conspire/constitutive.html) - Constitutive model library.
 #[pymodule]
 fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
+    let submodule_math = PyModule::new(py, "math")?;
     let submodule_constitutive = PyModule::new(py, "constitutive")?;
+    submodule_math.setattr(
+        "__doc__",
+        "Mathematics library.\n\n - [special](math/special.html) - Special functions.",
+    )?;
     submodule_constitutive.setattr(
         "__doc__",
         "Constitutive model library.\n\n - [solid](constitutive/solid.html) - Solid constitutive models.",
     )?;
+    m.add_submodule(&submodule_math)?;
     m.add_submodule(&submodule_constitutive)?;
+    math::register_module(py, &submodule_math)?;
     constitutive::register_module(py, &submodule_constitutive)?;
+    py.import("sys")?
+        .getattr("modules")?
+        .set_item("conspire.math", submodule_math)?;
     py.import("sys")?
         .getattr("modules")?
         .set_item("conspire.constitutive", submodule_constitutive)
