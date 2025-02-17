@@ -27,8 +27,8 @@ def test_helmholtz_free_energy_density_zero():
     assert model.helmholtz_free_energy_density(identity) == 0
 
 
-def test_first_piola_kirchoff_stress_finite_difference():
-    stress = model.first_piola_kirchoff_stress(deformation_gradient)
+def test_first_piola_kirchhoff_stress_finite_difference():
+    stress = model.first_piola_kirchhoff_stress(deformation_gradient)
     for i in range(3):
         for j in range(3):
             deformation_gradient[i, j] += epsilon / 2
@@ -45,14 +45,14 @@ def test_first_piola_kirchoff_stress_finite_difference():
             deformation_gradient[i, j] += epsilon / 2
 
 
-def test_first_piola_kirchoff_tangent_stiffness_symmetry():
-    tngnt = model.first_piola_kirchoff_tangent_stiffness(deformation_gradient)
+def test_first_piola_kirchhoff_tangent_stiffness_symmetry():
+    tan = model.first_piola_kirchhoff_tangent_stiffness(deformation_gradient)
     for i in range(3):
         for j in range(3):
             for k in range(3):
                 for m in range(3):
                     assert np.abs(
-                        tngnt[i, j, k, m] - tngnt[k, m, i, j]
+                        tan[i, j, k, m] - tan[k, m, i, j]
                     ) < abs_tol
 
 
@@ -62,15 +62,15 @@ def test_cauchy_stress_zero():
     ).all()
 
 
-def test_first_piola_kirchoff_stress_zero():
+def test_first_piola_kirchhoff_stress_zero():
     assert (
-        model.first_piola_kirchoff_stress(identity) == zero
+        model.first_piola_kirchhoff_stress(identity) == zero
     ).all()
 
 
-def test_second_piola_kirchoff_stress_zero():
+def test_second_piola_kirchhoff_stress_zero():
     assert (
-        model.second_piola_kirchoff_stress(identity) == zero
+        model.second_piola_kirchhoff_stress(identity) == zero
     ).all()
 
 
@@ -81,21 +81,21 @@ def test_cauchy_stress_symmetry():
     ) < abs_tol).all()
 
 
-def test_cauchy_stress_related_to_first_piola_kirchoff_stress():
+def test_cauchy_stress_relate_first_piola_kirchhoff_stress():
     assert (
         model.cauchy_stress(deformation_gradient) -
-        model.first_piola_kirchoff_stress(deformation_gradient)
+        model.first_piola_kirchhoff_stress(deformation_gradient)
         .dot(deformation_gradient.T)
         / np.linalg.det(deformation_gradient)
         < abs_tol
     ).all()
 
 
-def test_cauchy_stress_related_to_second_piola_kirchoff_stress():
+def test_cauchy_stress_relate_second_piola_kirchhoff_stress():
     assert (
         model.cauchy_stress(deformation_gradient) -
         deformation_gradient
-        .dot(model.second_piola_kirchoff_stress(deformation_gradient))
+        .dot(model.second_piola_kirchhoff_stress(deformation_gradient))
         .dot(deformation_gradient.T)
         / np.linalg.det(deformation_gradient)
         < abs_tol
@@ -117,13 +117,13 @@ def test_bulk_modulus():
 
 
 def test_cauchy_tangent_stiffness_finite_difference():
-    tngnt = model.cauchy_tangent_stiffness(deformation_gradient)
+    tan = model.cauchy_tangent_stiffness(deformation_gradient)
     for i in range(3):
         for j in range(3):
             for k in range(3):
                 for m in range(3):
                     assert np.abs(
-                        tngnt[i, j, k, m] - tngnt[j, i, k, m]
+                        tan[i, j, k, m] - tan[j, i, k, m]
                     ) < abs_tol
                     deformation_gradient[k, m] += epsilon / 2
                     d_stress = model.cauchy_stress(
@@ -134,46 +134,46 @@ def test_cauchy_tangent_stiffness_finite_difference():
                         deformation_gradient
                     )[i, j]
                     assert np.abs(
-                        tngnt[i, j, k, m] - d_stress / epsilon
+                        tan[i, j, k, m] - d_stress / epsilon
                     ) < 1.33 * epsilon
                     deformation_gradient[k, m] += epsilon / 2
 
 
-def test_first_piola_kirchoff_tangent_stiffness_finite_difference():
-    tngnt = model.first_piola_kirchoff_tangent_stiffness(deformation_gradient)
+def test_first_piola_kirchhoff_tangent_stiffness_finite_difference():
+    tan = model.first_piola_kirchhoff_tangent_stiffness(deformation_gradient)
     for i in range(3):
         for j in range(3):
             for k in range(3):
                 for m in range(3):
                     deformation_gradient[k, m] += epsilon / 2
-                    d_stress = model.first_piola_kirchoff_stress(
+                    d_stress = model.first_piola_kirchhoff_stress(
                         deformation_gradient
                     )[i, j]
                     deformation_gradient[k, m] -= epsilon
-                    d_stress -= model.first_piola_kirchoff_stress(
+                    d_stress -= model.first_piola_kirchhoff_stress(
                         deformation_gradient
                     )[i, j]
                     assert np.abs(
-                        tngnt[i, j, k, m] - d_stress / epsilon
+                        tan[i, j, k, m] - d_stress / epsilon
                     ) < epsilon
                     deformation_gradient[k, m] += epsilon / 2
 
 
-def test_second_piola_kirchoff_tangent_stiffness_finite_difference():
-    tngnt = model.second_piola_kirchoff_tangent_stiffness(deformation_gradient)
+def test_second_piola_kirchhoff_tangent_stiffness_finite_difference():
+    tan = model.second_piola_kirchhoff_tangent_stiffness(deformation_gradient)
     for i in range(3):
         for j in range(3):
             for k in range(3):
                 for m in range(3):
                     deformation_gradient[k, m] += epsilon / 2
-                    d_stress = model.second_piola_kirchoff_stress(
+                    d_stress = model.second_piola_kirchhoff_stress(
                         deformation_gradient
                     )[i, j]
                     deformation_gradient[k, m] -= epsilon
-                    d_stress -= model.second_piola_kirchoff_stress(
+                    d_stress -= model.second_piola_kirchhoff_stress(
                         deformation_gradient
                     )[i, j]
                     assert np.abs(
-                        tngnt[i, j, k, m] - d_stress / epsilon
+                        tan[i, j, k, m] - d_stress / epsilon
                     ) < 2.33 * epsilon
                     deformation_gradient[k, m] += epsilon / 2
