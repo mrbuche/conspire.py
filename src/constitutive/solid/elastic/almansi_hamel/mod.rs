@@ -46,7 +46,7 @@ impl AlmansiHamel {
     ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
         let cauchy_stress: Vec<Vec<f64>> =
             AlmansiHamelConspire::new(&[self.bulk_modulus, self.shear_modulus])
-                .calculate_cauchy_stress(&deformation_gradient.into())?
+                .cauchy_stress(&deformation_gradient.into())?
                 .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
@@ -60,7 +60,7 @@ impl AlmansiHamel {
     ) -> Result<Bound<'py, PyArray4<f64>>, PyErrGlue> {
         let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<f64>>>> =
             AlmansiHamelConspire::new(&[self.bulk_modulus, self.shear_modulus])
-                .calculate_cauchy_tangent_stiffness(&deformation_gradient.into())?
+                .cauchy_tangent_stiffness(&deformation_gradient.into())?
                 .into();
         Ok(PyArray4::from_array(
             py,
@@ -85,7 +85,7 @@ impl AlmansiHamel {
     ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
         let cauchy_stress: Vec<Vec<f64>> =
             AlmansiHamelConspire::new(&[self.bulk_modulus, self.shear_modulus])
-                .calculate_first_piola_kirchhoff_stress(&deformation_gradient.into())?
+                .first_piola_kirchhoff_stress(&deformation_gradient.into())?
                 .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
@@ -99,7 +99,7 @@ impl AlmansiHamel {
     ) -> Result<Bound<'py, PyArray4<f64>>, PyErrGlue> {
         let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<f64>>>> =
             AlmansiHamelConspire::new(&[self.bulk_modulus, self.shear_modulus])
-                .calculate_first_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
+                .first_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
                 .into();
         Ok(PyArray4::from_array(
             py,
@@ -124,7 +124,7 @@ impl AlmansiHamel {
     ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
         let cauchy_stress: Vec<Vec<f64>> =
             AlmansiHamelConspire::new(&[self.bulk_modulus, self.shear_modulus])
-                .calculate_second_piola_kirchhoff_stress(&deformation_gradient.into())?
+                .second_piola_kirchhoff_stress(&deformation_gradient.into())?
                 .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
@@ -138,7 +138,7 @@ impl AlmansiHamel {
     ) -> Result<Bound<'py, PyArray4<f64>>, PyErrGlue> {
         let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<f64>>>> =
             AlmansiHamelConspire::new(&[self.bulk_modulus, self.shear_modulus])
-                .calculate_second_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
+                .second_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
                 .into();
         Ok(PyArray4::from_array(
             py,

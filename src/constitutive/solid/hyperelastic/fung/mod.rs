@@ -61,7 +61,7 @@ impl Fung {
             self.extra_modulus,
             self.exponent,
         ])
-        .calculate_cauchy_stress(&deformation_gradient.into())?
+        .cauchy_stress(&deformation_gradient.into())?
         .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
@@ -79,7 +79,7 @@ impl Fung {
             self.extra_modulus,
             self.exponent,
         ])
-        .calculate_cauchy_tangent_stiffness(&deformation_gradient.into())?
+        .cauchy_tangent_stiffness(&deformation_gradient.into())?
         .into();
         Ok(PyArray4::from_array(
             py,
@@ -108,7 +108,7 @@ impl Fung {
             self.extra_modulus,
             self.exponent,
         ])
-        .calculate_first_piola_kirchhoff_stress(&deformation_gradient.into())?
+        .first_piola_kirchhoff_stress(&deformation_gradient.into())?
         .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
@@ -126,7 +126,7 @@ impl Fung {
             self.extra_modulus,
             self.exponent,
         ])
-        .calculate_first_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
+        .first_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
         .into();
         Ok(PyArray4::from_array(
             py,
@@ -155,7 +155,7 @@ impl Fung {
             self.extra_modulus,
             self.exponent,
         ])
-        .calculate_second_piola_kirchhoff_stress(&deformation_gradient.into())?
+        .second_piola_kirchhoff_stress(&deformation_gradient.into())?
         .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
@@ -173,7 +173,7 @@ impl Fung {
             self.extra_modulus,
             self.exponent,
         ])
-        .calculate_second_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
+        .second_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
         .into();
         Ok(PyArray4::from_array(
             py,
@@ -201,6 +201,6 @@ impl Fung {
             self.extra_modulus,
             self.exponent,
         ])
-        .calculate_helmholtz_free_energy_density(&deformation_gradient.into())?)
+        .helmholtz_free_energy_density(&deformation_gradient.into())?)
     }
 }
