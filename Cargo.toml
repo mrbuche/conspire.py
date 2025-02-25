@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 conspire = { features = ["constitutive"], git = "https://github.com/mrbuche/conspire.rs.git", rev = "3961c0f44c9a75494da1914570f66d0c7f572f8b" }
 ndarray = { version = "0.16.1" }
 numpy = { version = "=0.23.0" }
-pyo3 = { features = ["extension-module"], version = "=0.23.4" }
+pyo3 = { features = ["extension-module"], version = "=0.23.5" }
 
 [profile.release]
 codegen-units = 1
