@@ -53,8 +53,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Requirements
         run: pip install --upgrade build maturin pip twine
-      - name: Wheel
+      - name: Wheel 1
         run: maturin build --release
+      - name: Wheel 2
+        run: python -m build --outdir target/wheels/
       - name: Check
         run: twine check target/wheels/*
       - name: Artifacts
