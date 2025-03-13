@@ -2,8 +2,19 @@ use conspire::math::special;
 use pyo3::prelude::*;
 
 pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(lambert_w, m)?)?;
     m.add_function(wrap_pyfunction!(langevin, m)?)?;
     m.add_function(wrap_pyfunction!(inverse_langevin, m)?)
+}
+
+/// Returns the Lambert W function.
+///
+/// $$
+/// y = W_0(x)
+/// $$
+#[pyfunction]
+pub fn lambert_w(x: f64) -> f64 {
+    special::lambert_w(x)
 }
 
 /// Returns the Langevin function.
