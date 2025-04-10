@@ -82,7 +82,7 @@ jobs:
       - name: UV
         uses: astral-sh/setup-uv@v5
       - name: Twine
-        run: uv pip install twince
+        run: uv pip install twine
       - name: Wheels
         run: mv ./*-dist*/*.whl dist/
       - name: Upload
