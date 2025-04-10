@@ -1,4 +1,6 @@
 dist/
 target/
+.venv/
+.vscode/
 *.pyc
 *__pycache__

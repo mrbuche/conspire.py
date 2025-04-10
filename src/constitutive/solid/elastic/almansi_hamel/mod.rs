@@ -1,7 +1,7 @@
 use crate::PyErrGlue;
 use conspire::constitutive::{
-    solid::elastic::{AlmansiHamel as AlmansiHamelConspire, Elastic},
     Constitutive,
+    solid::elastic::{AlmansiHamel as AlmansiHamelConspire, Elastic},
 };
 use ndarray::Array;
 use numpy::{PyArray2, PyArray4};

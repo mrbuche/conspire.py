@@ -1,0 +1,43 @@
+name: Test
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.head_ref }}
+env:
+  CARGO_TERM_COLOR: always
+on:
+  pull_request:
+    branches: main
+permissions: {}
+jobs:
+  Test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        toolchain: [beta, nightly, stable]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Toolchain
+        uses: actions-rs/toolchain@88dc2356392166efad76775c878094f4e83ff746
+        with:
+          components: clippy, rustfmt
+          toolchain: ${{ matrix.toolchain }}
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --release -- -D warnings
+      - name: Clippy tests
+        run: cargo clippy --release --tests -- -D warnings
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: UV
+        uses: astral-sh/setup-uv@v5
+      - name: Sync
+        run: uv sync --extra test
+      - name: Test
+        run: uv run pytest

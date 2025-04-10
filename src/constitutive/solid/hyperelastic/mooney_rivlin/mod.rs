@@ -1,10 +1,10 @@
 use crate::PyErrGlue;
 use conspire::constitutive::{
+    Constitutive,
     solid::{
         elastic::Elastic,
         hyperelastic::{Hyperelastic, MooneyRivlin as MooneyRivlinConspire},
     },
-    Constitutive,
 };
 use ndarray::Array;
 use numpy::{PyArray2, PyArray4};
