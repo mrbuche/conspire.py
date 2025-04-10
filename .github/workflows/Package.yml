@@ -81,8 +81,8 @@ jobs:
           python-version: 3.13
       - name: UV
         uses: astral-sh/setup-uv@v5
-      - name: Twine
-        run: uv pip install twine
+      - name: Sync
+        run: uv sync --extra dist
       - name: Wheels
         run: mv ./*-dist*/*.whl dist/
       - name: Upload
