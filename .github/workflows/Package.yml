@@ -1,30 +1,35 @@
 name: Package
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.head_ref }}
+env:
+  CARGO_TERM_COLOR: always
 on:
   pull_request:
     branches: main
   release:
     types: published
-env:
-  CARGO_TERM_COLOR: always
+permissions: {}
 jobs:
   Source:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Rust
-        uses: actions-rs/toolchain@v1
+      - name: Toolchain
+        uses: actions-rs/toolchain@88dc2356392166efad76775c878094f4e83ff746
         with:
-          default: true
           toolchain: stable
       - name: Python
         uses: actions/setup-python@v5
         with:
           python-version: 3.13
-      - name: Requirements
-        run: pip install --upgrade build maturin pip twine
+      - name: UV
+        uses: astral-sh/setup-uv@v5
+      - name: Sync
+        run: uv sync --extra dist
       - name: Source
-        run: python -m build . --sdist
+        run: uv run python -m build . --sdist
       - name: Check
         run: twine check dist/*
       - name: Artifacts
@@ -42,21 +47,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Rust
-        uses: actions-rs/toolchain@v1
+      - name: Toolchain
+        uses: actions-rs/toolchain@88dc2356392166efad76775c878094f4e83ff746
         with:
-          default: true
           toolchain: stable
       - name: Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Requirements
-        run: pip install --upgrade build maturin pip twine
+      - name: UV
+        uses: astral-sh/setup-uv@v5
+      - name: Sync
+        run: uv sync --extra dist
       - name: Wheel
-        run: maturin build --release
+        run: uv run maturin build --release
       - name: Check
-        run: twine check target/wheels/*
+        run: uv run twine check target/wheels/*
       - name: Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -73,10 +79,12 @@ jobs:
         with:
           check-latest: true
           python-version: 3.13
-      - name: Requirements
-        run: pip install --upgrade pip twine
+      - name: UV
+        uses: astral-sh/setup-uv@v5
+      - name: Sync
+        run: uv sync --extra dist
       - name: Wheels
         run: mv ./*-dist*/*.whl dist/
       - name: Upload
         if: github.event_name == 'release'
-        run: twine upload -u __token__ -p ${{ secrets.PYPI_TOKEN }} dist/*
+        run: uv run twine upload -u __token__ -p ${{ secrets.PYPI_TOKEN }} dist/*

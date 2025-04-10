@@ -22,12 +22,14 @@ name = "conspire"
 requires-python = ">=3.8"
 
 [project.optional-dependencies]
+dist = ["build", "maturin", "pytest", "twine"]
 docs = ["matplotlib", "pdoc"]
+test = ["maturin", "pytest"]
 
 [project.urls]
-Documentation = 'https://conspire.readthedocs.io'
-Homepage = 'https://mrbuche.github.io/conspire'
-Repository = 'https://github.com/mrbuche/conspire.py'
+Documentation = "https://conspire.readthedocs.io"
+Homepage = "https://mrbuche.github.io/conspire"
+Repository = "https://github.com/mrbuche/conspire.py"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
@@ -35,8 +37,8 @@ profile = "release"
 
 [tool.pytest.ini_options]
 python_files = [
-  '*.py'
+  "*.py"
 ]
 testpaths = [
-  'tests/'
+  "tests/"
 ]

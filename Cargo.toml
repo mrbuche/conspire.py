@@ -1,5 +1,5 @@
 [package]
-edition = "2021"
+edition = "2024"
 name = "conspire"
 publish = false
 version = "0.2.3"
@@ -8,10 +8,10 @@ version = "0.2.3"
 crate-type = ["cdylib"]
 
 [dependencies]
-conspire = { features = ["constitutive"], git = "https://github.com/mrbuche/conspire.rs.git", rev = "d0c00f309f59385a03b136d2712a6a20f263ad94" }
-ndarray = { version = "0.16.1" }
-numpy = { version = "=0.23.0" }
-pyo3 = { features = ["extension-module"], version = "=0.23.5" }
+conspire = { features = ["constitutive"], git = "https://github.com/mrbuche/conspire.rs.git", rev = "c0967fbadda6feb135115ecaa18ef358a157501d" }
+ndarray = { version = "=0.16.1" }
+numpy = { version = "=0.24.0" }
+pyo3 = { features = ["extension-module"], version = "=0.24.1" }
 
 [profile.release]
 codegen-units = 1
