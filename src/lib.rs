@@ -16,6 +16,7 @@ use pyo3::{exceptions::PyTypeError, prelude::*};
 /// <hr>
 /// - [math](conspire/math.html) - Mathematics library.
 /// - [constitutive](conspire/constitutive.html) - Constitutive model library.
+/// - [fem](conspire/fem.html) - Finite element library.
 #[pymodule]
 fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     let submodule_math = PyModule::new(py, "math")?;
