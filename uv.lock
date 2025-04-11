@@ -215,7 +215,7 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-dev = [
+dist = [
     { name = "build" },
     { name = "maturin" },
     { name = "pytest" },
@@ -235,17 +235,17 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "build", marker = "extra == 'dev'" },
+    { name = "build", marker = "extra == 'dist'" },
     { name = "matplotlib", marker = "extra == 'docs'" },
-    { name = "maturin", marker = "extra == 'dev'" },
+    { name = "maturin", marker = "extra == 'dist'" },
     { name = "maturin", marker = "extra == 'test'" },
     { name = "numpy" },
     { name = "pdoc", marker = "extra == 'docs'" },
-    { name = "pytest", marker = "extra == 'dev'" },
+    { name = "pytest", marker = "extra == 'dist'" },
     { name = "pytest", marker = "extra == 'test'" },
-    { name = "twine", marker = "extra == 'dev'" },
+    { name = "twine", marker = "extra == 'dist'" },
 ]
-provides-extras = ["dev", "docs", "test"]
+provides-extras = ["dist", "docs", "test"]
 
 [[package]]
 name = "contourpy"

@@ -1,4 +1,5 @@
 mod constitutive;
+mod fem;
 mod math;
 
 use ::conspire::constitutive::ConstitutiveError;
@@ -19,6 +20,7 @@ use pyo3::{exceptions::PyTypeError, prelude::*};
 fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     let submodule_math = PyModule::new(py, "math")?;
     let submodule_constitutive = PyModule::new(py, "constitutive")?;
+    let submodule_fem = PyModule::new(py, "fem")?;
     submodule_math.setattr(
         "__doc__",
         "Mathematics library.\n\n - [special](math/special.html) - Special functions.",
@@ -27,16 +29,22 @@ fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
         "__doc__",
         "Constitutive model library.\n\n - [solid](constitutive/solid.html) - Solid constitutive models.",
     )?;
+    submodule_constitutive.setattr("__doc__", "Finite element library")?;
     m.add_submodule(&submodule_math)?;
     m.add_submodule(&submodule_constitutive)?;
+    m.add_submodule(&submodule_fem)?;
     math::register_module(py, &submodule_math)?;
     constitutive::register_module(py, &submodule_constitutive)?;
+    fem::register_module(py, &submodule_fem)?;
     py.import("sys")?
         .getattr("modules")?
         .set_item("conspire.math", submodule_math)?;
     py.import("sys")?
         .getattr("modules")?
-        .set_item("conspire.constitutive", submodule_constitutive)
+        .set_item("conspire.constitutive", submodule_constitutive)?;
+    py.import("sys")?
+        .getattr("modules")?
+        .set_item("conspire.fem", submodule_fem)
 }
 
 pub struct PyErrGlue {
