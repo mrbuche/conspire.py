@@ -23,6 +23,10 @@ volumetric_small = identity * (1 + epsilon)**(1/3)
 model = AlmansiHamel(bulk_modulus, shear_modulus)
 
 
+def test_str():
+    assert model.__str__() == f'AlmansiHamel(bulk_modulus={bulk_modulus}, shear_modulus={shear_modulus})'
+
+
 def test_cauchy_stress_zero():
     assert (
         model.cauchy_stress(identity) == zero

@@ -1,14 +1,19 @@
 use crate::PyErrGlue;
-use conspire::constitutive::{
-    Constitutive,
-    solid::{
-        elastic::Elastic,
-        hyperelastic::{Hyperelastic, SaintVenantKirchhoff as SaintVenantKirchhoffConspire},
+use conspire::{
+    constitutive::{
+        Constitutive,
+        solid::{
+            Solid,
+            elastic::Elastic,
+            hyperelastic::{Hyperelastic, SaintVenantKirchhoff as SaintVenantKirchhoffConspire},
+        },
     },
+    mechanics::Scalar,
 };
 use ndarray::Array;
 use numpy::{PyArray2, PyArray4};
 use pyo3::prelude::*;
+use std::fmt::{self, Display, Formatter};
 
 /// The Saint Venant-Kirchhoff hyperelastic constitutive model.
 ///
@@ -24,19 +29,28 @@ use pyo3::prelude::*;
 ///
 /// **Notes**
 /// - The Green-Saint Venant strain measure is given by $\mathbf{E}=\tfrac{1}{2}(\mathbf{C}-\mathbf{1})$.
-#[pyclass]
+#[pyclass(str)]
 pub struct SaintVenantKirchhoff {
-    bulk_modulus: f64,
-    shear_modulus: f64,
+    model: SaintVenantKirchhoffConspire<[Scalar; 2]>,
+}
+
+impl Display for SaintVenantKirchhoff {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "SaintVenantKirchhoff(bulk_modulus={}, shear_modulus={})",
+            self.model.bulk_modulus(),
+            self.model.shear_modulus()
+        )
+    }
 }
 
 #[pymethods]
 impl SaintVenantKirchhoff {
     #[new]
-    fn new(bulk_modulus: f64, shear_modulus: f64) -> Self {
+    fn new(bulk_modulus: Scalar, shear_modulus: Scalar) -> Self {
         Self {
-            bulk_modulus,
-            shear_modulus,
+            model: SaintVenantKirchhoffConspire::new([bulk_modulus, shear_modulus]),
         }
     }
     /// $$
@@ -45,12 +59,12 @@ impl SaintVenantKirchhoff {
     fn cauchy_stress<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
-        let cauchy_stress: Vec<Vec<f64>> =
-            SaintVenantKirchhoffConspire::new(&[self.bulk_modulus, self.shear_modulus])
-                .cauchy_stress(&deformation_gradient.into())?
-                .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+        let cauchy_stress: Vec<Vec<Scalar>> = self
+            .model
+            .cauchy_stress(&deformation_gradient.into())?
+            .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
     /// $$
@@ -59,12 +73,12 @@ impl SaintVenantKirchhoff {
     fn cauchy_tangent_stiffness<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray4<f64>>, PyErrGlue> {
-        let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<f64>>>> =
-            SaintVenantKirchhoffConspire::new(&[self.bulk_modulus, self.shear_modulus])
-                .cauchy_tangent_stiffness(&deformation_gradient.into())?
-                .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+        let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<Scalar>>>> = self
+            .model
+            .cauchy_tangent_stiffness(&deformation_gradient.into())?
+            .into();
         Ok(PyArray4::from_array(
             py,
             &Array::from_shape_vec(
@@ -84,12 +98,12 @@ impl SaintVenantKirchhoff {
     fn first_piola_kirchhoff_stress<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
-        let cauchy_stress: Vec<Vec<f64>> =
-            SaintVenantKirchhoffConspire::new(&[self.bulk_modulus, self.shear_modulus])
-                .first_piola_kirchhoff_stress(&deformation_gradient.into())?
-                .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+        let cauchy_stress: Vec<Vec<Scalar>> = self
+            .model
+            .first_piola_kirchhoff_stress(&deformation_gradient.into())?
+            .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
     /// $$
@@ -98,12 +112,12 @@ impl SaintVenantKirchhoff {
     fn first_piola_kirchhoff_tangent_stiffness<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray4<f64>>, PyErrGlue> {
-        let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<f64>>>> =
-            SaintVenantKirchhoffConspire::new(&[self.bulk_modulus, self.shear_modulus])
-                .first_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
-                .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+        let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<Scalar>>>> = self
+            .model
+            .first_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
+            .into();
         Ok(PyArray4::from_array(
             py,
             &Array::from_shape_vec(
@@ -123,12 +137,12 @@ impl SaintVenantKirchhoff {
     fn second_piola_kirchhoff_stress<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
-        let cauchy_stress: Vec<Vec<f64>> =
-            SaintVenantKirchhoffConspire::new(&[self.bulk_modulus, self.shear_modulus])
-                .second_piola_kirchhoff_stress(&deformation_gradient.into())?
-                .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+        let cauchy_stress: Vec<Vec<Scalar>> = self
+            .model
+            .second_piola_kirchhoff_stress(&deformation_gradient.into())?
+            .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
     /// $$
@@ -137,12 +151,12 @@ impl SaintVenantKirchhoff {
     fn second_piola_kirchhoff_tangent_stiffness<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray4<f64>>, PyErrGlue> {
-        let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<f64>>>> =
-            SaintVenantKirchhoffConspire::new(&[self.bulk_modulus, self.shear_modulus])
-                .second_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
-                .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+        let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<Scalar>>>> = self
+            .model
+            .second_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
+            .into();
         Ok(PyArray4::from_array(
             py,
             &Array::from_shape_vec(
@@ -161,11 +175,10 @@ impl SaintVenantKirchhoff {
     /// $$
     fn helmholtz_free_energy_density(
         &self,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<f64, PyErrGlue> {
-        Ok(
-            SaintVenantKirchhoffConspire::new(&[self.bulk_modulus, self.shear_modulus])
-                .helmholtz_free_energy_density(&deformation_gradient.into())?,
-        )
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(self
+            .model
+            .helmholtz_free_energy_density(&deformation_gradient.into())?)
     }
 }

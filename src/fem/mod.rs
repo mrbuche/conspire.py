@@ -1,65 +1,69 @@
+use super::PyErrGlue;
 use conspire::{
     constitutive::solid::hyperelastic::NeoHookean,
-    fem::{ElementBlock, FiniteElementBlock, LinearTetrahedron},
-    math::{TensorRank1Vec, TensorVec},
+    fem::{
+        Connectivity, ElasticFiniteElementBlock, ElementBlock, FiniteElementBlock,
+        HyperelasticFiniteElementBlock, LinearTetrahedron, NodalCoordinatesBlock,
+        ReferenceNodalCoordinatesBlock,
+    },
+    math::TensorVec,
+    mechanics::Scalar,
 };
+use numpy::PyArray2;
 use pyo3::prelude::*;
 
-pub fn register_module(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<Block>()
-    // let submodule_special = PyModule::new(py, "special")?;
-    // submodule_special.setattr("__doc__", "Special functions.\n\n")?;
-    // m.add_submodule(&submodule_special)
-    // special::register_module(&submodule_special)?;
-    // py.import("sys")?
-    //     .getattr("modules")?
-    //     .set_item("conspire.math.special", submodule_special)
+pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_class::<NeoHookeanBlock>()
 }
 
-// Storing the full data is going seems impossible since parameters is a shared reference
-//
-// /// ???
-// #[pyclass]
-// pub struct Block {
-//     data: ElementBlock<LinearTetrahedron<NeoHookean<'static>>, 4>
-// }
-
-// #[pymethods]
-// impl Block {
-//     #[new]
-//     fn new(
-//         constitutive_model_parameters: Vec<f64>,
-//         connectivity: Vec<[usize; 4]>,
-//         reference_nodal_coordinates: Vec<[f64; 3]>,
-//     ) -> Self {
-//         Self {
-//             data: ElementBlock::<LinearTetrahedron<NeoHookean>, 4>::new(
-//                 &constitutive_model_parameters,
-//                 connectivity,
-//                 TensorRank1Vec::new(&reference_nodal_coordinates),
-//             )
-//         }
-//     }
-// }
+const N: usize = 4;
+type Parameters = [Scalar; 2];
+type Model = NeoHookean<Parameters>;
 
 /// ???
 #[pyclass]
-pub struct Block {
-    connectivity: Vec<[usize; 4]>,
-    elements: Vec<LinearTetrahedron>,
-    reference_nodal_coordinates: Vec<[f64; 3]>
+pub struct NeoHookeanBlock {
+    block: ElementBlock<LinearTetrahedron<Model>, N>,
 }
 
 #[pymethods]
-impl Block {
+impl NeoHookeanBlock {
     #[new]
     fn new(
-        connectivity: Vec<[usize; 4]>,
-        reference_nodal_coordinates: Vec<[f64; 3]>,
+        bulk_modulus: Scalar,
+        shear_modulus: Scalar,
+        connectivity: Connectivity<N>,
+        reference_nodal_coordinates: Vec<[Scalar; 3]>,
     ) -> Self {
         Self {
-            connectivity,
-            reference_nodal_coordinates,
+            block: ElementBlock::new(
+                [bulk_modulus, shear_modulus],
+                connectivity,
+                ReferenceNodalCoordinatesBlock::new(&reference_nodal_coordinates),
+            ),
         }
     }
+    /// ???
+    fn helmholtz_free_energy(
+        &self,
+        nodal_coordinates: Vec<[Scalar; 3]>,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(self
+            .block
+            .helmholtz_free_energy(&NodalCoordinatesBlock::new(&nodal_coordinates))?)
+    }
+    /// ???
+    fn nodal_forces<'py>(
+        &self,
+        py: Python<'py>,
+        nodal_coordinates: Vec<[Scalar; 3]>,
+    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+        let forces: Vec<Vec<Scalar>> = self
+            .block
+            .nodal_forces(&NodalCoordinatesBlock::new(&nodal_coordinates))?
+            .into();
+        Ok(PyArray2::from_vec2(py, &forces)?)
+    }
+    // /// ???
+    // fn nodal_stiffnesses<'py>(&self, py: Python<'py>, nodal_coordinates: Vec<[Scalar; 3]>) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {}
 }

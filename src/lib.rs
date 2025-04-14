@@ -30,13 +30,13 @@ fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
         "__doc__",
         "Constitutive model library.\n\n - [solid](constitutive/solid.html) - Solid constitutive models.",
     )?;
-    submodule_constitutive.setattr("__doc__", "Finite element library")?;
+    submodule_fem.setattr("__doc__", "Finite element library")?;
     m.add_submodule(&submodule_math)?;
     m.add_submodule(&submodule_constitutive)?;
     m.add_submodule(&submodule_fem)?;
     math::register_module(py, &submodule_math)?;
     constitutive::register_module(py, &submodule_constitutive)?;
-    fem::register_module(py, &submodule_fem)?;
+    fem::register_module(&submodule_fem)?;
     py.import("sys")?
         .getattr("modules")?
         .set_item("conspire.math", submodule_math)?;
