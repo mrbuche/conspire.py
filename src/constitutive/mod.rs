@@ -1,4 +1,4 @@
-mod solid;
+pub mod solid;
 
 use pyo3::prelude::*;
 

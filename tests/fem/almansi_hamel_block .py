@@ -1,5 +1,6 @@
-from conspire.constitutive.solid.hyperelastic import NeoHookean
+from conspire.constitutive.solid.elastic import AlmansiHamel
 from conspire.fem import Block
+from pytest import raises
 import numpy as np
 
 
@@ -75,54 +76,16 @@ for i, reference_coordinate in enumerate(reference_coordinates):
     affinely_deformed_coordinates[i] = \
         deformation_gradient.dot(reference_coordinate)
 
-model = NeoHookean(bulk_modulus, shear_modulus)
+model = AlmansiHamel(bulk_modulus, shear_modulus)
 
 block = Block(model, connectivity, reference_coordinates)
 
 
-def test_helmholtz_free_energy_zero():
-    assert block.helmholtz_free_energy(reference_coordinates) == 0
-
-
-def test_helmholtz_free_energy_affine():
-    assert np.abs(
-        block.helmholtz_free_energy(affinely_deformed_coordinates) -
-        model.helmholtz_free_energy_density(deformation_gradient)
-    ) < abs_tol
+def test_helmholtz_free_energy_undefined():
+    with raises(TypeError, match="The Helmholtz free energy density"
+                + " is undefined for elastic constitutive models."):
+        block.helmholtz_free_energy(reference_coordinates)
 
 
 def test_nodal_forces_zero():
     assert np.all(block.nodal_forces(reference_coordinates) == 0.0)
-
-
-def test_nodal_forces_finite_difference_undeformed():
-    for a in range(len(reference_coordinates)):
-        for i in range(3):
-            reference_coordinates[a, i] += epsilon / 2
-            d_helmholtz = block.helmholtz_free_energy(
-                reference_coordinates
-            )
-            reference_coordinates[a, i] -= epsilon
-            d_helmholtz -= block.helmholtz_free_energy(
-                reference_coordinates
-            )
-            assert np.abs(d_helmholtz / epsilon) < epsilon
-            reference_coordinates[a, i] += epsilon / 2
-
-
-def test_nodal_forces_finite_difference_deformed():
-    forces = block.nodal_forces(deformed_coordinates)
-    for a in range(len(reference_coordinates)):
-        for i in range(3):
-            deformed_coordinates[a, i] += epsilon / 2
-            d_helmholtz = block.helmholtz_free_energy(
-                deformed_coordinates
-            )
-            deformed_coordinates[a, i] -= epsilon
-            d_helmholtz -= block.helmholtz_free_energy(
-                deformed_coordinates
-            )
-            assert np.abs(
-                forces[a, i] - d_helmholtz / epsilon
-            ) < epsilon
-            deformed_coordinates[a, i] += epsilon / 2

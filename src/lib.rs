@@ -30,7 +30,7 @@ fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
         "__doc__",
         "Constitutive model library.\n\n - [solid](constitutive/solid.html) - Solid constitutive models.",
     )?;
-    submodule_fem.setattr("__doc__", "Finite element library")?;
+    submodule_fem.setattr("__doc__", "Finite element library.")?;
     m.add_submodule(&submodule_math)?;
     m.add_submodule(&submodule_constitutive)?;
     m.add_submodule(&submodule_fem)?;
@@ -50,6 +50,14 @@ fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
 
 pub struct PyErrGlue {
     message: String,
+}
+
+impl PyErrGlue {
+    fn new(message: &str) -> Self {
+        Self {
+            message: message.into(),
+        }
+    }
 }
 
 impl From<PyErrGlue> for PyErr {

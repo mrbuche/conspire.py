@@ -52,6 +52,14 @@ impl AlmansiHamel {
             model: AlmansiHamelConspire::new([bulk_modulus, shear_modulus]),
         }
     }
+    #[getter]
+    pub fn bulk_modulus(&self) -> &Scalar {
+        self.model.bulk_modulus()
+    }
+    #[getter]
+    pub fn shear_modulus(&self) -> &Scalar {
+        self.model.shear_modulus()
+    }
     /// $$
     /// \boldsymbol{\sigma}(\mathbf{F}) = \frac{2\mu}{J}\,\mathbf{e}' + \frac{\kappa}{J}\,\mathrm{tr}(\mathbf{e})\mathbf{1}
     /// $$

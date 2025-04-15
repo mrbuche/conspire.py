@@ -52,6 +52,14 @@ impl NeoHookean {
             model: NeoHookeanConspire::new([bulk_modulus, shear_modulus]),
         }
     }
+    #[getter]
+    pub fn bulk_modulus(&self) -> &Scalar {
+        self.model.bulk_modulus()
+    }
+    #[getter]
+    pub fn shear_modulus(&self) -> &Scalar {
+        self.model.shear_modulus()
+    }
     /// $$
     /// \boldsymbol{\sigma}(\mathbf{F}) = \frac{\mu}{J}\,{\mathbf{B}^*}' + \frac{\kappa}{2}\left(J - \frac{1}{J}\right)\mathbf{1}
     /// $$

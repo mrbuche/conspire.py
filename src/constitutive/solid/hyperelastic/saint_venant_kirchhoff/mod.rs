@@ -53,6 +53,14 @@ impl SaintVenantKirchhoff {
             model: SaintVenantKirchhoffConspire::new([bulk_modulus, shear_modulus]),
         }
     }
+    #[getter]
+    pub fn bulk_modulus(&self) -> &Scalar {
+        self.model.bulk_modulus()
+    }
+    #[getter]
+    pub fn shear_modulus(&self) -> &Scalar {
+        self.model.shear_modulus()
+    }
     /// $$
     /// \boldsymbol{\sigma} = J^{-1}\mathbf{P}\cdot\mathbf{F}^T
     /// $$

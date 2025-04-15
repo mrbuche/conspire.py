@@ -1,4 +1,4 @@
-from conspire.constitutive.solid.hyperelastic import NeoHookean
+from conspire.constitutive.solid.hyperelastic import SaintVenantKirchhoff
 from conspire.fem import Block
 import numpy as np
 
@@ -75,7 +75,7 @@ for i, reference_coordinate in enumerate(reference_coordinates):
     affinely_deformed_coordinates[i] = \
         deformation_gradient.dot(reference_coordinate)
 
-model = NeoHookean(bulk_modulus, shear_modulus)
+model = SaintVenantKirchhoff(bulk_modulus, shear_modulus)
 
 block = Block(model, connectivity, reference_coordinates)
 

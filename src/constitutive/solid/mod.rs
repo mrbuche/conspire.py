@@ -1,5 +1,5 @@
-mod elastic;
-mod hyperelastic;
+pub mod elastic;
+pub mod hyperelastic;
 
 use pyo3::prelude::*;
 
