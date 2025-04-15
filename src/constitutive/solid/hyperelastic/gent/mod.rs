@@ -1,14 +1,19 @@
 use crate::PyErrGlue;
-use conspire::constitutive::{
-    Constitutive,
-    solid::{
-        elastic::Elastic,
-        hyperelastic::{Gent as GentConspire, Hyperelastic},
+use conspire::{
+    constitutive::{
+        Constitutive,
+        solid::{
+            Solid,
+            elastic::Elastic,
+            hyperelastic::{Gent as GentConspire, Hyperelastic},
+        },
     },
+    mechanics::Scalar,
 };
 use ndarray::Array;
 use numpy::{PyArray2, PyArray4};
 use pyo3::prelude::*;
+use std::fmt::{self, Display, Formatter};
 
 /// The Gent hyperelastic constitutive model.[^gent]
 ///
@@ -27,21 +32,29 @@ use pyo3::prelude::*;
 ///
 /// **Notes**
 /// - The Gent model reduces to the [Neo-Hookean model](#NeoHookean) when $J_m\to\infty$.
-#[pyclass]
+#[pyclass(str)]
 pub struct Gent {
-    bulk_modulus: f64,
-    shear_modulus: f64,
-    extensibility: f64,
+    model: GentConspire<[Scalar; 3]>,
+}
+
+impl Display for Gent {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Gent(bulk_modulus={}, shear_modulus={}, extensibility={})",
+            self.model.bulk_modulus(),
+            self.model.shear_modulus(),
+            self.model.extensibility(),
+        )
+    }
 }
 
 #[pymethods]
 impl Gent {
     #[new]
-    fn new(bulk_modulus: f64, shear_modulus: f64, extensibility: f64) -> Self {
+    fn new(bulk_modulus: Scalar, shear_modulus: Scalar, extensibility: Scalar) -> Self {
         Self {
-            bulk_modulus,
-            shear_modulus,
-            extensibility,
+            model: GentConspire::new([bulk_modulus, shear_modulus, extensibility]),
         }
     }
     /// $$
@@ -50,12 +63,12 @@ impl Gent {
     fn cauchy_stress<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
-        let cauchy_stress: Vec<Vec<f64>> =
-            GentConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
-                .cauchy_stress(&deformation_gradient.into())?
-                .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+        let cauchy_stress: Vec<Vec<Scalar>> = self
+            .model
+            .cauchy_stress(&deformation_gradient.into())?
+            .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
     /// $$
@@ -64,23 +77,15 @@ impl Gent {
     fn cauchy_tangent_stiffness<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray4<f64>>, PyErrGlue> {
-        let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<f64>>>> =
-            GentConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
-                .cauchy_tangent_stiffness(&deformation_gradient.into())?
-                .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+        let cauchy_tangent_stiffness: Vec<Scalar> = self
+            .model
+            .cauchy_tangent_stiffness(&deformation_gradient.into())?
+            .into();
         Ok(PyArray4::from_array(
             py,
-            &Array::from_shape_vec(
-                (3, 3, 3, 3),
-                cauchy_tangent_stiffness
-                    .into_iter()
-                    .flatten()
-                    .flatten()
-                    .flatten()
-                    .collect(),
-            )?,
+            &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
         ))
     }
     /// $$
@@ -89,12 +94,12 @@ impl Gent {
     fn first_piola_kirchhoff_stress<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
-        let cauchy_stress: Vec<Vec<f64>> =
-            GentConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
-                .first_piola_kirchhoff_stress(&deformation_gradient.into())?
-                .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+        let cauchy_stress: Vec<Vec<Scalar>> = self
+            .model
+            .first_piola_kirchhoff_stress(&deformation_gradient.into())?
+            .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
     /// $$
@@ -103,23 +108,15 @@ impl Gent {
     fn first_piola_kirchhoff_tangent_stiffness<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray4<f64>>, PyErrGlue> {
-        let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<f64>>>> =
-            GentConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
-                .first_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
-                .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+        let cauchy_tangent_stiffness: Vec<Scalar> = self
+            .model
+            .first_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
+            .into();
         Ok(PyArray4::from_array(
             py,
-            &Array::from_shape_vec(
-                (3, 3, 3, 3),
-                cauchy_tangent_stiffness
-                    .into_iter()
-                    .flatten()
-                    .flatten()
-                    .flatten()
-                    .collect(),
-            )?,
+            &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
         ))
     }
     /// $$
@@ -128,12 +125,12 @@ impl Gent {
     fn second_piola_kirchhoff_stress<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
-        let cauchy_stress: Vec<Vec<f64>> =
-            GentConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
-                .second_piola_kirchhoff_stress(&deformation_gradient.into())?
-                .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+        let cauchy_stress: Vec<Vec<Scalar>> = self
+            .model
+            .second_piola_kirchhoff_stress(&deformation_gradient.into())?
+            .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
     /// $$
@@ -142,23 +139,15 @@ impl Gent {
     fn second_piola_kirchhoff_tangent_stiffness<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray4<f64>>, PyErrGlue> {
-        let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<f64>>>> =
-            GentConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
-                .second_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
-                .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+        let cauchy_tangent_stiffness: Vec<Scalar> = self
+            .model
+            .second_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
+            .into();
         Ok(PyArray4::from_array(
             py,
-            &Array::from_shape_vec(
-                (3, 3, 3, 3),
-                cauchy_tangent_stiffness
-                    .into_iter()
-                    .flatten()
-                    .flatten()
-                    .flatten()
-                    .collect(),
-            )?,
+            &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
         ))
     }
     /// $$
@@ -166,11 +155,10 @@ impl Gent {
     /// $$
     fn helmholtz_free_energy_density(
         &self,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<f64, PyErrGlue> {
-        Ok(
-            GentConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extensibility])
-                .helmholtz_free_energy_density(&deformation_gradient.into())?,
-        )
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(self
+            .model
+            .helmholtz_free_energy_density(&deformation_gradient.into())?)
     }
 }

@@ -1,14 +1,19 @@
 use crate::PyErrGlue;
-use conspire::constitutive::{
-    Constitutive,
-    solid::{
-        elastic::Elastic,
-        hyperelastic::{Hyperelastic, MooneyRivlin as MooneyRivlinConspire},
+use conspire::{
+    constitutive::{
+        Constitutive,
+        solid::{
+            Solid,
+            elastic::Elastic,
+            hyperelastic::{Hyperelastic, MooneyRivlin as MooneyRivlinConspire},
+        },
     },
+    mechanics::Scalar,
 };
 use ndarray::Array;
 use numpy::{PyArray2, PyArray4};
 use pyo3::prelude::*;
+use std::fmt::{self, Display, Formatter};
 
 /// The Mooney-Rivlin hyperelastic constitutive model.[^mooneyrivlin1]<sup>,</sup>[^mooneyrivlin2]
 ///
@@ -28,21 +33,29 @@ use pyo3::prelude::*;
 ///
 /// **Notes**
 /// - The Mooney-Rivlin model reduces to the [Neo-Hookean model](#NeoHookean) when $\mu_m\to 0$.
-#[pyclass]
+#[pyclass(str)]
 pub struct MooneyRivlin {
-    bulk_modulus: f64,
-    shear_modulus: f64,
-    extra_modulus: f64,
+    model: MooneyRivlinConspire<[Scalar; 3]>,
+}
+
+impl Display for MooneyRivlin {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "MooneyRivlin(bulk_modulus={}, shear_modulus={}, extra_modulus={})",
+            self.model.bulk_modulus(),
+            self.model.shear_modulus(),
+            self.model.extra_modulus(),
+        )
+    }
 }
 
 #[pymethods]
 impl MooneyRivlin {
     #[new]
-    fn new(bulk_modulus: f64, shear_modulus: f64, extra_modulus: f64) -> Self {
+    fn new(bulk_modulus: Scalar, shear_modulus: Scalar, extra_modulus: Scalar) -> Self {
         Self {
-            bulk_modulus,
-            shear_modulus,
-            extra_modulus,
+            model: MooneyRivlinConspire::new([bulk_modulus, shear_modulus, extra_modulus]),
         }
     }
     /// $$
@@ -51,12 +64,12 @@ impl MooneyRivlin {
     fn cauchy_stress<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
-        let cauchy_stress: Vec<Vec<f64>> =
-            MooneyRivlinConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extra_modulus])
-                .cauchy_stress(&deformation_gradient.into())?
-                .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+        let cauchy_stress: Vec<Vec<Scalar>> = self
+            .model
+            .cauchy_stress(&deformation_gradient.into())?
+            .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
     /// $$
@@ -65,23 +78,15 @@ impl MooneyRivlin {
     fn cauchy_tangent_stiffness<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray4<f64>>, PyErrGlue> {
-        let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<f64>>>> =
-            MooneyRivlinConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extra_modulus])
-                .cauchy_tangent_stiffness(&deformation_gradient.into())?
-                .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+        let cauchy_tangent_stiffness: Vec<Scalar> = self
+            .model
+            .cauchy_tangent_stiffness(&deformation_gradient.into())?
+            .into();
         Ok(PyArray4::from_array(
             py,
-            &Array::from_shape_vec(
-                (3, 3, 3, 3),
-                cauchy_tangent_stiffness
-                    .into_iter()
-                    .flatten()
-                    .flatten()
-                    .flatten()
-                    .collect(),
-            )?,
+            &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
         ))
     }
     /// $$
@@ -90,12 +95,12 @@ impl MooneyRivlin {
     fn first_piola_kirchhoff_stress<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
-        let cauchy_stress: Vec<Vec<f64>> =
-            MooneyRivlinConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extra_modulus])
-                .first_piola_kirchhoff_stress(&deformation_gradient.into())?
-                .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+        let cauchy_stress: Vec<Vec<Scalar>> = self
+            .model
+            .first_piola_kirchhoff_stress(&deformation_gradient.into())?
+            .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
     /// $$
@@ -104,23 +109,15 @@ impl MooneyRivlin {
     fn first_piola_kirchhoff_tangent_stiffness<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray4<f64>>, PyErrGlue> {
-        let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<f64>>>> =
-            MooneyRivlinConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extra_modulus])
-                .first_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
-                .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+        let cauchy_tangent_stiffness: Vec<Scalar> = self
+            .model
+            .first_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
+            .into();
         Ok(PyArray4::from_array(
             py,
-            &Array::from_shape_vec(
-                (3, 3, 3, 3),
-                cauchy_tangent_stiffness
-                    .into_iter()
-                    .flatten()
-                    .flatten()
-                    .flatten()
-                    .collect(),
-            )?,
+            &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
         ))
     }
     /// $$
@@ -129,12 +126,12 @@ impl MooneyRivlin {
     fn second_piola_kirchhoff_stress<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
-        let cauchy_stress: Vec<Vec<f64>> =
-            MooneyRivlinConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extra_modulus])
-                .second_piola_kirchhoff_stress(&deformation_gradient.into())?
-                .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+        let cauchy_stress: Vec<Vec<Scalar>> = self
+            .model
+            .second_piola_kirchhoff_stress(&deformation_gradient.into())?
+            .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
     /// $$
@@ -143,23 +140,15 @@ impl MooneyRivlin {
     fn second_piola_kirchhoff_tangent_stiffness<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray4<f64>>, PyErrGlue> {
-        let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<f64>>>> =
-            MooneyRivlinConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extra_modulus])
-                .second_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
-                .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+        let cauchy_tangent_stiffness: Vec<Scalar> = self
+            .model
+            .second_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
+            .into();
         Ok(PyArray4::from_array(
             py,
-            &Array::from_shape_vec(
-                (3, 3, 3, 3),
-                cauchy_tangent_stiffness
-                    .into_iter()
-                    .flatten()
-                    .flatten()
-                    .flatten()
-                    .collect(),
-            )?,
+            &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
         ))
     }
     /// $$
@@ -167,11 +156,10 @@ impl MooneyRivlin {
     /// $$
     fn helmholtz_free_energy_density(
         &self,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<f64, PyErrGlue> {
-        Ok(
-            MooneyRivlinConspire::new(&[self.bulk_modulus, self.shear_modulus, self.extra_modulus])
-                .helmholtz_free_energy_density(&deformation_gradient.into())?,
-        )
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(self
+            .model
+            .helmholtz_free_energy_density(&deformation_gradient.into())?)
     }
 }

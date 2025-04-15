@@ -1,14 +1,19 @@
 use crate::PyErrGlue;
-use conspire::constitutive::{
-    Constitutive,
-    solid::{
-        elastic::Elastic,
-        hyperelastic::{Fung as FungConspire, Hyperelastic},
+use conspire::{
+    constitutive::{
+        Constitutive,
+        solid::{
+            Solid,
+            elastic::Elastic,
+            hyperelastic::{Fung as FungConspire, Hyperelastic},
+        },
     },
+    mechanics::Scalar,
 };
 use ndarray::Array;
 use numpy::{PyArray2, PyArray4};
 use pyo3::prelude::*;
+use std::fmt::{self, Display, Formatter};
 
 /// The Fung hyperelastic constitutive model.[^fung]
 ///
@@ -28,23 +33,35 @@ use pyo3::prelude::*;
 ///
 /// **Notes**
 /// - The Fung model reduces to the [Neo-Hookean model](#NeoHookean) when $\mu_m\to 0$ or $c\to 0$.
-#[pyclass]
+#[pyclass(str)]
 pub struct Fung {
-    bulk_modulus: f64,
-    shear_modulus: f64,
-    extra_modulus: f64,
-    exponent: f64,
+    model: FungConspire<[Scalar; 4]>,
+}
+
+impl Display for Fung {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Fung(bulk_modulus={}, shear_modulus={}, extra_modulus={}, exponent={})",
+            self.model.bulk_modulus(),
+            self.model.shear_modulus(),
+            self.model.extra_modulus(),
+            self.model.exponent(),
+        )
+    }
 }
 
 #[pymethods]
 impl Fung {
     #[new]
-    fn new(bulk_modulus: f64, shear_modulus: f64, extra_modulus: f64, exponent: f64) -> Self {
+    fn new(
+        bulk_modulus: Scalar,
+        shear_modulus: Scalar,
+        extra_modulus: Scalar,
+        exponent: Scalar,
+    ) -> Self {
         Self {
-            bulk_modulus,
-            shear_modulus,
-            extra_modulus,
-            exponent,
+            model: FungConspire::new([bulk_modulus, shear_modulus, extra_modulus, exponent]),
         }
     }
     /// $$
@@ -53,16 +70,12 @@ impl Fung {
     fn cauchy_stress<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
-        let cauchy_stress: Vec<Vec<f64>> = FungConspire::new(&[
-            self.bulk_modulus,
-            self.shear_modulus,
-            self.extra_modulus,
-            self.exponent,
-        ])
-        .cauchy_stress(&deformation_gradient.into())?
-        .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+        let cauchy_stress: Vec<Vec<Scalar>> = self
+            .model
+            .cauchy_stress(&deformation_gradient.into())?
+            .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
     /// $$
@@ -71,27 +84,15 @@ impl Fung {
     fn cauchy_tangent_stiffness<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray4<f64>>, PyErrGlue> {
-        let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<f64>>>> = FungConspire::new(&[
-            self.bulk_modulus,
-            self.shear_modulus,
-            self.extra_modulus,
-            self.exponent,
-        ])
-        .cauchy_tangent_stiffness(&deformation_gradient.into())?
-        .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+        let cauchy_tangent_stiffness: Vec<Scalar> = self
+            .model
+            .cauchy_tangent_stiffness(&deformation_gradient.into())?
+            .into();
         Ok(PyArray4::from_array(
             py,
-            &Array::from_shape_vec(
-                (3, 3, 3, 3),
-                cauchy_tangent_stiffness
-                    .into_iter()
-                    .flatten()
-                    .flatten()
-                    .flatten()
-                    .collect(),
-            )?,
+            &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
         ))
     }
     /// $$
@@ -100,16 +101,12 @@ impl Fung {
     fn first_piola_kirchhoff_stress<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
-        let cauchy_stress: Vec<Vec<f64>> = FungConspire::new(&[
-            self.bulk_modulus,
-            self.shear_modulus,
-            self.extra_modulus,
-            self.exponent,
-        ])
-        .first_piola_kirchhoff_stress(&deformation_gradient.into())?
-        .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+        let cauchy_stress: Vec<Vec<Scalar>> = self
+            .model
+            .first_piola_kirchhoff_stress(&deformation_gradient.into())?
+            .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
     /// $$
@@ -118,27 +115,15 @@ impl Fung {
     fn first_piola_kirchhoff_tangent_stiffness<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray4<f64>>, PyErrGlue> {
-        let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<f64>>>> = FungConspire::new(&[
-            self.bulk_modulus,
-            self.shear_modulus,
-            self.extra_modulus,
-            self.exponent,
-        ])
-        .first_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
-        .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+        let cauchy_tangent_stiffness: Vec<Scalar> = self
+            .model
+            .first_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
+            .into();
         Ok(PyArray4::from_array(
             py,
-            &Array::from_shape_vec(
-                (3, 3, 3, 3),
-                cauchy_tangent_stiffness
-                    .into_iter()
-                    .flatten()
-                    .flatten()
-                    .flatten()
-                    .collect(),
-            )?,
+            &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
         ))
     }
     /// $$
@@ -147,16 +132,12 @@ impl Fung {
     fn second_piola_kirchhoff_stress<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray2<f64>>, PyErrGlue> {
-        let cauchy_stress: Vec<Vec<f64>> = FungConspire::new(&[
-            self.bulk_modulus,
-            self.shear_modulus,
-            self.extra_modulus,
-            self.exponent,
-        ])
-        .second_piola_kirchhoff_stress(&deformation_gradient.into())?
-        .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+        let cauchy_stress: Vec<Vec<Scalar>> = self
+            .model
+            .second_piola_kirchhoff_stress(&deformation_gradient.into())?
+            .into();
         Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
     }
     /// $$
@@ -165,27 +146,15 @@ impl Fung {
     fn second_piola_kirchhoff_tangent_stiffness<'py>(
         &self,
         py: Python<'py>,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<Bound<'py, PyArray4<f64>>, PyErrGlue> {
-        let cauchy_tangent_stiffness: Vec<Vec<Vec<Vec<f64>>>> = FungConspire::new(&[
-            self.bulk_modulus,
-            self.shear_modulus,
-            self.extra_modulus,
-            self.exponent,
-        ])
-        .second_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
-        .into();
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+        let cauchy_tangent_stiffness: Vec<Scalar> = self
+            .model
+            .second_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
+            .into();
         Ok(PyArray4::from_array(
             py,
-            &Array::from_shape_vec(
-                (3, 3, 3, 3),
-                cauchy_tangent_stiffness
-                    .into_iter()
-                    .flatten()
-                    .flatten()
-                    .flatten()
-                    .collect(),
-            )?,
+            &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
         ))
     }
     /// $$
@@ -193,14 +162,10 @@ impl Fung {
     /// $$
     fn helmholtz_free_energy_density(
         &self,
-        deformation_gradient: Vec<Vec<f64>>,
-    ) -> Result<f64, PyErrGlue> {
-        Ok(FungConspire::new(&[
-            self.bulk_modulus,
-            self.shear_modulus,
-            self.extra_modulus,
-            self.exponent,
-        ])
-        .helmholtz_free_energy_density(&deformation_gradient.into())?)
+        deformation_gradient: Vec<Vec<Scalar>>,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(self
+            .model
+            .helmholtz_free_energy_density(&deformation_gradient.into())?)
     }
 }

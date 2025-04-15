@@ -20,6 +20,11 @@ const N: usize = 4;
 type Parameters = [Scalar; 2];
 type Model = NeoHookean<Parameters>;
 
+// can try to "pattern match" for different model blocks?
+// would be nice to pass model in though like python users might expect
+// model = NeoHookean(13, 3)
+// block = Block(model, conn, coords)
+
 /// ???
 #[pyclass]
 pub struct NeoHookeanBlock {

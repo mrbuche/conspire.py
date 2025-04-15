@@ -24,7 +24,8 @@ model = AlmansiHamel(bulk_modulus, shear_modulus)
 
 
 def test_str():
-    assert model.__str__() == f'AlmansiHamel(bulk_modulus={bulk_modulus}, shear_modulus={shear_modulus})'
+    assert model.__str__() == 'AlmansiHamel(' + \
+        f'bulk_modulus={bulk_modulus}, shear_modulus={shear_modulus})'
 
 
 def test_cauchy_stress_zero():

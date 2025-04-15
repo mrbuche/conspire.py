@@ -25,7 +25,9 @@ model = Gent(bulk_modulus, shear_modulus, extensibility)
 
 
 def test_str():
-    assert model.__str__() == f'Gent(bulk_modulus={bulk_modulus}, shear_modulus={shear_modulus}, extensibility={extensibility})'
+    assert model.__str__() == 'Gent(' + \
+        f'bulk_modulus={bulk_modulus}, shear_modulus={shear_modulus}' + \
+        f', extensibility={extensibility})'
 
 
 def test_helmholtz_free_energy_density_zero():

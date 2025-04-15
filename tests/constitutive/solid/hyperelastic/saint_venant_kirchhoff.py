@@ -24,7 +24,8 @@ model = SaintVenantKirchhoff(bulk_modulus, shear_modulus)
 
 
 def test_str():
-    assert model.__str__() == f'SaintVenantKirchhoff(bulk_modulus={bulk_modulus}, shear_modulus={shear_modulus})'
+    assert model.__str__() == 'SaintVenantKirchhoff(' + \
+        f'bulk_modulus={bulk_modulus}, shear_modulus={shear_modulus})'
 
 
 def test_helmholtz_free_energy_density_zero():

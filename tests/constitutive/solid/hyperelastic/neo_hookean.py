@@ -24,7 +24,8 @@ model = NeoHookean(bulk_modulus, shear_modulus)
 
 
 def test_str():
-    assert model.__str__() == f'NeoHookean(bulk_modulus={bulk_modulus}, shear_modulus={shear_modulus})'
+    assert model.__str__() == 'NeoHookean(' + \
+        f'bulk_modulus={bulk_modulus}, shear_modulus={shear_modulus})'
 
 
 def test_helmholtz_free_energy_density_zero():

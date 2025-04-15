@@ -25,7 +25,9 @@ model = MooneyRivlin(bulk_modulus, shear_modulus, extra_modulus)
 
 
 def test_str():
-    assert model.__str__() == f'MooneyRivlin(bulk_modulus={bulk_modulus}, shear_modulus={shear_modulus})'
+    assert model.__str__() == 'MooneyRivlin(' + \
+        f'bulk_modulus={bulk_modulus}, shear_modulus={shear_modulus}' + \
+        f', extra_modulus={extra_modulus})'
 
 
 def test_helmholtz_free_energy_density_zero():
