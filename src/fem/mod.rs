@@ -100,7 +100,7 @@ impl Block {
     /// $$
     fn helmholtz_free_energy(
         &self,
-        py: Python<'_>,
+        py: Python,
         nodal_coordinates: Vec<[Scalar; 3]>,
     ) -> Result<Scalar, PyErrGlue> {
         match self {
