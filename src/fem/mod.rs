@@ -45,7 +45,7 @@ enum Model<'py> {
 impl Block {
     #[new]
     fn new(
-        py: Python<'_>,
+        py: Python,
         model: Model,
         connectivity: Connectivity<N>,
         reference_nodal_coordinates: Vec<[Scalar; 3]>,
@@ -151,7 +151,7 @@ enum ElasticModel<'py> {
 impl ElasticBlock {
     #[new]
     fn new(
-        py: Python<'_>,
+        py: Python,
         model: ElasticModel,
         connectivity: Connectivity<N>,
         reference_nodal_coordinates: Vec<[Scalar; 3]>,
@@ -236,7 +236,7 @@ enum HyperelasticModel<'py> {
 impl HyperelasticBlock {
     #[new]
     fn new(
-        py: Python<'_>,
+        py: Python,
         model: HyperelasticModel,
         connectivity: Connectivity<N>,
         reference_nodal_coordinates: Vec<[Scalar; 3]>,
@@ -268,7 +268,7 @@ impl HyperelasticBlock {
     }
     fn helmholtz_free_energy(
         &self,
-        py: Python<'_>,
+        py: Python,
         nodal_coordinates: Vec<[Scalar; 3]>,
     ) -> Result<Scalar, PyErrGlue> {
         match self {
