@@ -45,16 +45,13 @@ macro_rules! hyperelastic {
                     model: Inner::new([$($parameter),+]),
                 }
             }
-            /// @private
-            #[getter]
-            pub fn bulk_modulus(&self) -> &Scalar {
-                self.model.bulk_modulus()
-            }
-            /// @private
-            #[getter]
-            pub fn shear_modulus(&self) -> &Scalar {
-                self.model.shear_modulus()
-            }
+            $(
+                /// @private
+                #[getter]
+                pub fn $parameter(&self) -> &Scalar {
+                    self.model.$parameter()
+                }
+            )+
             #[doc = concat!("$$", $helmholtz_free_energy_density, "$$")]
             fn helmholtz_free_energy_density(
                 &self,

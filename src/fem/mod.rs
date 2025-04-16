@@ -43,6 +43,22 @@ enum Model {
     SaintVenantKirchhoff(Py<SaintVenantKirchhoff>),
 }
 
+macro_rules! block_inner {
+    ($py: ident, $model: ident, $type: ident, $block: ident, $name: ident, $connectivity: ident, $reference_nodal_coordinates: ident, $($parameter: expr),+ $(,)?) => {
+        Ok(Self::$block(Py::new(
+            $py,
+            $block::$name(Py::new(
+                $py,
+                block::$type::$name::new(
+                    $($model.getattr($py, stringify!($parameter))?.extract($py)?),+,
+                    $connectivity,
+                    $reference_nodal_coordinates,
+                )
+            )?)
+        )?))
+    }
+}
+
 #[pymethods]
 impl Block {
     #[new]
@@ -53,114 +69,88 @@ impl Block {
         reference_nodal_coordinates: Vec<[Scalar; 3]>,
     ) -> Result<Self, PyErr> {
         match model {
-            Model::AlmansiHamel(model) => {
-                let bulk_modulus: Scalar = model.getattr(py, "bulk_modulus")?.extract(py)?;
-                let shear_modulus: Scalar = model.getattr(py, "shear_modulus")?.extract(py)?;
-                let block = block::elastic::AlmansiHamel::new(
-                    bulk_modulus,
-                    shear_modulus,
-                    connectivity,
-                    reference_nodal_coordinates,
-                );
-                Ok(Self::ElasticBlock(Py::new(
-                    py,
-                    ElasticBlock::AlmansiHamel(Py::new(py, block)?),
-                )?))
-            }
-            Model::ArrudaBoyce(model) => {
-                let bulk_modulus: Scalar = model.getattr(py, "bulk_modulus")?.extract(py)?;
-                let shear_modulus: Scalar = model.getattr(py, "shear_modulus")?.extract(py)?;
-                let number_of_links: Scalar = model.getattr(py, "number_of_links")?.extract(py)?;
-                let block = block::hyperelastic::ArrudaBoyce::new(
-                    bulk_modulus,
-                    shear_modulus,
-                    number_of_links,
-                    connectivity,
-                    reference_nodal_coordinates,
-                );
-                Ok(Self::HyperelasticBlock(Py::new(
-                    py,
-                    HyperelasticBlock::ArrudaBoyce(Py::new(py, block)?),
-                )?))
-            }
-            Model::Fung(model) => {
-                let bulk_modulus: Scalar = model.getattr(py, "bulk_modulus")?.extract(py)?;
-                let shear_modulus: Scalar = model.getattr(py, "shear_modulus")?.extract(py)?;
-                let extra_modulus: Scalar = model.getattr(py, "extra_modulus")?.extract(py)?;
-                let exponent: Scalar = model.getattr(py, "exponent")?.extract(py)?;
-                let block = block::hyperelastic::Fung::new(
-                    bulk_modulus,
-                    shear_modulus,
-                    extra_modulus,
-                    exponent,
-                    connectivity,
-                    reference_nodal_coordinates,
-                );
-                Ok(Self::HyperelasticBlock(Py::new(
-                    py,
-                    HyperelasticBlock::Fung(Py::new(py, block)?),
-                )?))
-            }
-            Model::Gent(model) => {
-                let bulk_modulus: Scalar = model.getattr(py, "bulk_modulus")?.extract(py)?;
-                let shear_modulus: Scalar = model.getattr(py, "shear_modulus")?.extract(py)?;
-                let extensibility: Scalar = model.getattr(py, "extensibility")?.extract(py)?;
-                let block = block::hyperelastic::Gent::new(
-                    bulk_modulus,
-                    shear_modulus,
-                    extensibility,
-                    connectivity,
-                    reference_nodal_coordinates,
-                );
-                Ok(Self::HyperelasticBlock(Py::new(
-                    py,
-                    HyperelasticBlock::Gent(Py::new(py, block)?),
-                )?))
-            }
-            Model::MooneyRivlin(model) => {
-                let bulk_modulus: Scalar = model.getattr(py, "bulk_modulus")?.extract(py)?;
-                let shear_modulus: Scalar = model.getattr(py, "shear_modulus")?.extract(py)?;
-                let extra_modulus: Scalar = model.getattr(py, "extra_modulus")?.extract(py)?;
-                let block = block::hyperelastic::MooneyRivlin::new(
-                    bulk_modulus,
-                    shear_modulus,
-                    extra_modulus,
-                    connectivity,
-                    reference_nodal_coordinates,
-                );
-                Ok(Self::HyperelasticBlock(Py::new(
-                    py,
-                    HyperelasticBlock::MooneyRivlin(Py::new(py, block)?),
-                )?))
-            }
-            Model::NeoHookean(model) => {
-                let bulk_modulus: Scalar = model.getattr(py, "bulk_modulus")?.extract(py)?;
-                let shear_modulus: Scalar = model.getattr(py, "shear_modulus")?.extract(py)?;
-                let block = block::hyperelastic::NeoHookean::new(
-                    bulk_modulus,
-                    shear_modulus,
-                    connectivity,
-                    reference_nodal_coordinates,
-                );
-                Ok(Self::HyperelasticBlock(Py::new(
-                    py,
-                    HyperelasticBlock::NeoHookean(Py::new(py, block)?),
-                )?))
-            }
-            Model::SaintVenantKirchhoff(model) => {
-                let bulk_modulus: Scalar = model.getattr(py, "bulk_modulus")?.extract(py)?;
-                let shear_modulus: Scalar = model.getattr(py, "shear_modulus")?.extract(py)?;
-                let block = block::hyperelastic::SaintVenantKirchhoff::new(
-                    bulk_modulus,
-                    shear_modulus,
-                    connectivity,
-                    reference_nodal_coordinates,
-                );
-                Ok(Self::HyperelasticBlock(Py::new(
-                    py,
-                    HyperelasticBlock::SaintVenantKirchhoff(Py::new(py, block)?),
-                )?))
-            }
+            Model::AlmansiHamel(model) => block_inner!(
+                py,
+                model,
+                elastic,
+                ElasticBlock,
+                AlmansiHamel,
+                connectivity,
+                reference_nodal_coordinates,
+                bulk_modulus,
+                shear_modulus,
+            ),
+            Model::ArrudaBoyce(model) => block_inner!(
+                py,
+                model,
+                hyperelastic,
+                HyperelasticBlock,
+                ArrudaBoyce,
+                connectivity,
+                reference_nodal_coordinates,
+                bulk_modulus,
+                shear_modulus,
+                number_of_links,
+            ),
+            Model::Fung(model) => block_inner!(
+                py,
+                model,
+                hyperelastic,
+                HyperelasticBlock,
+                Fung,
+                connectivity,
+                reference_nodal_coordinates,
+                bulk_modulus,
+                shear_modulus,
+                extra_modulus,
+                exponent,
+            ),
+            Model::Gent(model) => block_inner!(
+                py,
+                model,
+                hyperelastic,
+                HyperelasticBlock,
+                Gent,
+                connectivity,
+                reference_nodal_coordinates,
+                bulk_modulus,
+                shear_modulus,
+                extensibility,
+            ),
+            Model::MooneyRivlin(model) => block_inner!(
+                py,
+                model,
+                hyperelastic,
+                HyperelasticBlock,
+                MooneyRivlin,
+                connectivity,
+                reference_nodal_coordinates,
+                bulk_modulus,
+                shear_modulus,
+                extra_modulus,
+            ),
+            Model::NeoHookean(model) => block_inner!(
+                py,
+                model,
+                hyperelastic,
+                HyperelasticBlock,
+                NeoHookean,
+                connectivity,
+                reference_nodal_coordinates,
+                bulk_modulus,
+                shear_modulus,
+            ),
+            Model::SaintVenantKirchhoff(model) => block_inner!(
+                py,
+                model,
+                hyperelastic,
+                HyperelasticBlock,
+                SaintVenantKirchhoff,
+                connectivity,
+                reference_nodal_coordinates,
+                bulk_modulus,
+                shear_modulus,
+            ),
         }
     }
     /// $$

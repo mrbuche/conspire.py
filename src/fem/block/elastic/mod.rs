@@ -1,7 +1,4 @@
-use crate::{
-    PyErrGlue, constitutive::solid::elastic as constitutive, count_tts, fem::call_method,
-    replace_expr,
-};
+use crate::{PyErrGlue, constitutive::solid::elastic as constitutive, fem::call_method};
 use conspire::{
     fem::{
         Connectivity, ElasticFiniteElementBlock, ElementBlock, FiniteElementBlock,
@@ -10,7 +7,8 @@ use conspire::{
     math::TensorVec,
     mechanics::Scalar,
 };
-use numpy::PyArray2;
+use ndarray::Array;
+use numpy::{PyArray2, PyArray4};
 use pyo3::prelude::*;
 
 #[pyclass]
@@ -52,11 +50,7 @@ impl ElasticBlock {
         nodal_coordinates: Vec<[Scalar; 3]>,
     ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
         match self {
-            Self::AlmansiHamel(model) => Ok(model
-                .call_method1(py, "nodal_forces", (nodal_coordinates,))
-                .unwrap()
-                .extract(py)
-                .unwrap()),
+            Self::AlmansiHamel(model) => call_method!(model, py, "nodal_forces", nodal_coordinates),
         }
     }
 }
@@ -96,5 +90,19 @@ impl AlmansiHamel {
             .nodal_forces(&NodalCoordinatesBlock::new(&nodal_coordinates))?
             .into();
         Ok(PyArray2::from_vec2(py, &forces)?)
+    }
+    fn nodal_stiffnesses<'py>(
+        &self,
+        py: Python<'py>,
+        nodal_coordinates: Vec<[Scalar; 3]>,
+    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+        let stiffnesses: Vec<Scalar> = self
+            .block
+            .nodal_stiffnesses(&NodalCoordinatesBlock::new(&nodal_coordinates))?
+            .into();
+        Ok(PyArray4::from_array(
+            py,
+            &Array::from_shape_vec((4, 4, 3, 3), stiffnesses)?,
+        ))
     }
 }
