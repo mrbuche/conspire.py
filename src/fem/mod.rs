@@ -41,6 +41,16 @@ enum Model<'py> {
     SaintVenantKirchhoff(Bound<'py, SaintVenantKirchhoff>),
 }
 
+macro_rules! call_method {
+    ($model: ident, $py: ident, $name: literal, $nodal_coordinates: ident) => {
+        Ok($model
+            .call_method1($py, $name, ($nodal_coordinates,))
+            .unwrap()
+            .extract($py)
+            .unwrap())
+    };
+}
+
 #[pymethods]
 impl Block {
     #[new]
@@ -107,11 +117,9 @@ impl Block {
             Self::ElasticBlock(_) => Err(PyErrGlue::new(
                 "The Helmholtz free energy density is undefined for elastic constitutive models.",
             )),
-            Self::HyperelasticBlock(block) => Ok(block
-                .call_method1(py, "helmholtz_free_energy", (nodal_coordinates,))
-                .unwrap()
-                .extract(py)
-                .unwrap()),
+            Self::HyperelasticBlock(block) => {
+                call_method!(block, py, "helmholtz_free_energy", nodal_coordinates)
+            }
         }
     }
     /// $$
@@ -123,16 +131,10 @@ impl Block {
         nodal_coordinates: Vec<[Scalar; 3]>,
     ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
         match self {
-            Self::ElasticBlock(block) => Ok(block
-                .call_method1(py, "nodal_forces", (nodal_coordinates,))
-                .unwrap()
-                .extract(py)
-                .unwrap()),
-            Self::HyperelasticBlock(block) => Ok(block
-                .call_method1(py, "nodal_forces", (nodal_coordinates,))
-                .unwrap()
-                .extract(py)
-                .unwrap()),
+            Self::ElasticBlock(block) => call_method!(block, py, "nodal_forces", nodal_coordinates),
+            Self::HyperelasticBlock(block) => {
+                call_method!(block, py, "nodal_forces", nodal_coordinates)
+            }
         }
     }
 }
@@ -232,6 +234,17 @@ enum HyperelasticModel<'py> {
     SaintVenantKirchhoff(Bound<'py, SaintVenantKirchhoff>),
 }
 
+macro_rules! match_model {
+    ($self: ident, $py: ident, $name: literal, $nodal_coordinates: ident) => {
+        match $self {
+            Self::NeoHookean(model) => call_method!(model, $py, $name, $nodal_coordinates),
+            Self::SaintVenantKirchhoff(model) => {
+                call_method!(model, $py, $name, $nodal_coordinates)
+            }
+        }
+    };
+}
+
 #[pymethods]
 impl HyperelasticBlock {
     #[new]
@@ -271,121 +284,68 @@ impl HyperelasticBlock {
         py: Python,
         nodal_coordinates: Vec<[Scalar; 3]>,
     ) -> Result<Scalar, PyErrGlue> {
-        match self {
-            Self::NeoHookean(model) => Ok(model
-                .call_method1(py, "helmholtz_free_energy", (nodal_coordinates,))
-                .unwrap()
-                .extract(py)
-                .unwrap()),
-            Self::SaintVenantKirchhoff(model) => Ok(model
-                .call_method1(py, "helmholtz_free_energy", (nodal_coordinates,))
-                .unwrap()
-                .extract(py)
-                .unwrap()),
-        }
+        match_model!(self, py, "helmholtz_free_energy", nodal_coordinates)
     }
     fn nodal_forces<'py>(
         &self,
         py: Python<'py>,
         nodal_coordinates: Vec<[Scalar; 3]>,
     ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
-        match self {
-            Self::NeoHookean(model) => Ok(model
-                .call_method1(py, "nodal_forces", (nodal_coordinates,))
-                .unwrap()
-                .extract(py)
-                .unwrap()),
-            Self::SaintVenantKirchhoff(model) => Ok(model
-                .call_method1(py, "nodal_forces", (nodal_coordinates,))
-                .unwrap()
-                .extract(py)
-                .unwrap()),
+        match_model!(self, py, "nodal_forces", nodal_coordinates)
+    }
+}
+
+macro_rules! implement {
+    ($block: ident, $element: ident, $n: literal, $model: ident, $y: literal) => {
+        #[pyclass]
+        struct $block {
+            block: ElementBlock<$element<$model<[Scalar; $y]>>, $n>,
         }
-    }
-}
-
-#[pyclass]
-struct NeoHookeanBlock {
-    block: ElementBlock<LinearTetrahedron<NeoHookeanConspire<[Scalar; 2]>>, N>,
-}
-
-#[pyclass]
-struct SaintVenantKirchhoffBlock {
-    block: ElementBlock<LinearTetrahedron<SaintVenantKirchhoffConspire<[Scalar; 2]>>, N>,
-}
-
-#[pymethods]
-impl NeoHookeanBlock {
-    #[new]
-    fn new(
-        bulk_modulus: Scalar,
-        shear_modulus: Scalar,
-        connectivity: Connectivity<N>,
-        reference_nodal_coordinates: Vec<[Scalar; 3]>,
-    ) -> Self {
-        Self {
-            block: ElementBlock::new(
-                [bulk_modulus, shear_modulus],
-                connectivity,
-                ReferenceNodalCoordinatesBlock::new(&reference_nodal_coordinates),
-            ),
+        #[pymethods]
+        impl $block {
+            #[new]
+            fn new(
+                bulk_modulus: Scalar,
+                shear_modulus: Scalar,
+                connectivity: Connectivity<N>,
+                reference_nodal_coordinates: Vec<[Scalar; 3]>,
+            ) -> Self {
+                Self {
+                    block: ElementBlock::new(
+                        [bulk_modulus, shear_modulus],
+                        connectivity,
+                        ReferenceNodalCoordinatesBlock::new(&reference_nodal_coordinates),
+                    ),
+                }
+            }
+            fn helmholtz_free_energy(
+                &self,
+                nodal_coordinates: Vec<[Scalar; 3]>,
+            ) -> Result<Scalar, PyErrGlue> {
+                Ok(self
+                    .block
+                    .helmholtz_free_energy(&NodalCoordinatesBlock::new(&nodal_coordinates))?)
+            }
+            fn nodal_forces<'py>(
+                &self,
+                py: Python<'py>,
+                nodal_coordinates: Vec<[Scalar; 3]>,
+            ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+                let forces: Vec<Vec<Scalar>> = self
+                    .block
+                    .nodal_forces(&NodalCoordinatesBlock::new(&nodal_coordinates))?
+                    .into();
+                Ok(PyArray2::from_vec2(py, &forces)?)
+            }
         }
-    }
-    fn helmholtz_free_energy(
-        &self,
-        nodal_coordinates: Vec<[Scalar; 3]>,
-    ) -> Result<Scalar, PyErrGlue> {
-        Ok(self
-            .block
-            .helmholtz_free_energy(&NodalCoordinatesBlock::new(&nodal_coordinates))?)
-    }
-    fn nodal_forces<'py>(
-        &self,
-        py: Python<'py>,
-        nodal_coordinates: Vec<[Scalar; 3]>,
-    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
-        let forces: Vec<Vec<Scalar>> = self
-            .block
-            .nodal_forces(&NodalCoordinatesBlock::new(&nodal_coordinates))?
-            .into();
-        Ok(PyArray2::from_vec2(py, &forces)?)
-    }
+    };
 }
 
-#[pymethods]
-impl SaintVenantKirchhoffBlock {
-    #[new]
-    fn new(
-        bulk_modulus: Scalar,
-        shear_modulus: Scalar,
-        connectivity: Connectivity<N>,
-        reference_nodal_coordinates: Vec<[Scalar; 3]>,
-    ) -> Self {
-        Self {
-            block: ElementBlock::new(
-                [bulk_modulus, shear_modulus],
-                connectivity,
-                ReferenceNodalCoordinatesBlock::new(&reference_nodal_coordinates),
-            ),
-        }
-    }
-    fn helmholtz_free_energy(
-        &self,
-        nodal_coordinates: Vec<[Scalar; 3]>,
-    ) -> Result<Scalar, PyErrGlue> {
-        Ok(self
-            .block
-            .helmholtz_free_energy(&NodalCoordinatesBlock::new(&nodal_coordinates))?)
-    }
-    fn nodal_forces<'py>(
-        &self,
-        py: Python<'py>,
-        nodal_coordinates: Vec<[Scalar; 3]>,
-    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
-        let forces: Vec<Vec<Scalar>> = self
-            .block
-            .nodal_forces(&NodalCoordinatesBlock::new(&nodal_coordinates))?
-            .into();
-        Ok(PyArray2::from_vec2(py, &forces)?)
-    }
-}
+implement!(NeoHookeanBlock, LinearTetrahedron, 4, NeoHookeanConspire, 2);
+implement!(
+    SaintVenantKirchhoffBlock,
+    LinearTetrahedron,
+    4,
+    SaintVenantKirchhoffConspire,
+    2
+);

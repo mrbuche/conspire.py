@@ -7,3 +7,137 @@ pub use almansi_hamel::AlmansiHamel;
 pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<AlmansiHamel>()
 }
+
+macro_rules! implement {
+    ($base: ident, $model: ident, $name: literal, $docs: literal, $cauchy_stress: literal, $cauchy_tangent_stiffness: literal, $first_piola_kirchhoff_stress: literal, $first_piola_kirchhoff_tangent_stiffness: literal, $second_piola_kirchhoff_stress: literal, $second_piola_kirchhoff_tangent_stiffness: literal) => {
+        use crate::PyErrGlue;
+        use conspire::{
+            constitutive::{
+                Constitutive,
+                solid::{Solid, elastic::Elastic},
+            },
+            mechanics::Scalar,
+        };
+        use ndarray::Array;
+        use numpy::{PyArray2, PyArray4};
+        use pyo3::prelude::*;
+        use std::fmt::{self, Display, Formatter};
+        #[doc = concat!($docs)]
+        #[pyclass(str)]
+        pub struct $model {
+            model: $base<[Scalar; 2]>,
+        }
+        impl Display for $model {
+            fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+                write!(
+                    f,
+                    "{}(bulk_modulus={}, shear_modulus={})",
+                    $name,
+                    self.model.bulk_modulus(),
+                    self.model.shear_modulus()
+                )
+            }
+        }
+        #[pymethods]
+        impl $model {
+            #[new]
+            fn new(bulk_modulus: Scalar, shear_modulus: Scalar) -> Self {
+                Self {
+                    model: $base::new([bulk_modulus, shear_modulus]),
+                }
+            }
+            /// @private
+            #[getter]
+            pub fn bulk_modulus(&self) -> &Scalar {
+                self.model.bulk_modulus()
+            }
+            /// @private
+            #[getter]
+            pub fn shear_modulus(&self) -> &Scalar {
+                self.model.shear_modulus()
+            }
+            #[doc = concat!("$$", $cauchy_stress, "$$")]
+            fn cauchy_stress<'py>(
+                &self,
+                py: Python<'py>,
+                deformation_gradient: Vec<Vec<Scalar>>,
+            ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+                let cauchy_stress: Vec<Vec<Scalar>> = self
+                    .model
+                    .cauchy_stress(&deformation_gradient.into())?
+                    .into();
+                Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
+            }
+            #[doc = concat!("$$", $cauchy_tangent_stiffness, "$$")]
+            fn cauchy_tangent_stiffness<'py>(
+                &self,
+                py: Python<'py>,
+                deformation_gradient: Vec<Vec<Scalar>>,
+            ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+                let cauchy_tangent_stiffness: Vec<Scalar> = self
+                    .model
+                    .cauchy_tangent_stiffness(&deformation_gradient.into())?
+                    .into();
+                Ok(PyArray4::from_array(
+                    py,
+                    &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
+                ))
+            }
+            #[doc = concat!("$$", $first_piola_kirchhoff_stress, "$$")]
+            fn first_piola_kirchhoff_stress<'py>(
+                &self,
+                py: Python<'py>,
+                deformation_gradient: Vec<Vec<Scalar>>,
+            ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+                let cauchy_stress: Vec<Vec<Scalar>> = self
+                    .model
+                    .first_piola_kirchhoff_stress(&deformation_gradient.into())?
+                    .into();
+                Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
+            }
+            #[doc = concat!("$$", $first_piola_kirchhoff_tangent_stiffness, "$$")]
+            fn first_piola_kirchhoff_tangent_stiffness<'py>(
+                &self,
+                py: Python<'py>,
+                deformation_gradient: Vec<Vec<Scalar>>,
+            ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+                let cauchy_tangent_stiffness: Vec<Scalar> = self
+                    .model
+                    .first_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
+                    .into();
+                Ok(PyArray4::from_array(
+                    py,
+                    &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
+                ))
+            }
+            #[doc = concat!("$$", $second_piola_kirchhoff_stress, "$$")]
+            fn second_piola_kirchhoff_stress<'py>(
+                &self,
+                py: Python<'py>,
+                deformation_gradient: Vec<Vec<Scalar>>,
+            ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+                let cauchy_stress: Vec<Vec<Scalar>> = self
+                    .model
+                    .second_piola_kirchhoff_stress(&deformation_gradient.into())?
+                    .into();
+                Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
+            }
+            #[doc = concat!("$$", $second_piola_kirchhoff_tangent_stiffness, "$$")]
+            fn second_piola_kirchhoff_tangent_stiffness<'py>(
+                &self,
+                py: Python<'py>,
+                deformation_gradient: Vec<Vec<Scalar>>,
+            ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+                let cauchy_tangent_stiffness: Vec<Scalar> = self
+                    .model
+                    .second_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
+                    .into();
+                Ok(PyArray4::from_array(
+                    py,
+                    &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
+                ))
+            }
+        }
+    };
+}
+pub(crate) use implement;
