@@ -4,6 +4,7 @@ super::implement!(
     Base,
     AlmansiHamel,
     "AlmansiHamel",
+    2,
     r"The Almansi-Hamel elastic constitutive model.
 
     **Parameters**
@@ -23,5 +24,7 @@ super::implement!(
     "@private",
     "@private",
     "@private",
-    "@private"
+    "@private",
+    bulk_modulus,
+    shear_modulus,
 );

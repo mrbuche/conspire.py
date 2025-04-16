@@ -48,7 +48,7 @@ fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
         .set_item("conspire.fem", submodule_fem)
 }
 
-pub struct PyErrGlue {
+struct PyErrGlue {
     message: String,
 }
 

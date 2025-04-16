@@ -9,7 +9,7 @@ pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
 }
 
 macro_rules! implement {
-    ($base: ident, $model: ident, $name: literal, $docs: literal, $cauchy_stress: literal, $cauchy_tangent_stiffness: literal, $first_piola_kirchhoff_stress: literal, $first_piola_kirchhoff_tangent_stiffness: literal, $second_piola_kirchhoff_stress: literal, $second_piola_kirchhoff_tangent_stiffness: literal) => {
+    ($base: ident, $model: ident, $name: literal, $num: literal, $docs: literal, $cauchy_stress: literal, $cauchy_tangent_stiffness: literal, $first_piola_kirchhoff_stress: literal, $first_piola_kirchhoff_tangent_stiffness: literal, $second_piola_kirchhoff_stress: literal, $second_piola_kirchhoff_tangent_stiffness: literal, $($parameter: ident),+ $(,)?) => {
         use crate::PyErrGlue;
         use conspire::{
             constitutive::{
@@ -25,25 +25,21 @@ macro_rules! implement {
         #[doc = concat!($docs)]
         #[pyclass(str)]
         pub struct $model {
-            model: $base<[Scalar; 2]>,
+            model: $base<[Scalar; $num]>,
         }
         impl Display for $model {
             fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-                write!(
-                    f,
-                    "{}(bulk_modulus={}, shear_modulus={})",
-                    $name,
-                    self.model.bulk_modulus(),
-                    self.model.shear_modulus()
-                )
+                let args = format!(concat!($(stringify!($parameter), "={}, "),+), $(self.model.$parameter()),+);
+                let args = args.strip_suffix(", ").unwrap();
+                write!( f, "{}({})", $name, args)
             }
         }
         #[pymethods]
         impl $model {
             #[new]
-            fn new(bulk_modulus: Scalar, shear_modulus: Scalar) -> Self {
+            fn new($($parameter: Scalar),+) -> Self {
                 Self {
-                    model: $base::new([bulk_modulus, shear_modulus]),
+                    model: $base::new([$($parameter),+]),
                 }
             }
             /// @private
