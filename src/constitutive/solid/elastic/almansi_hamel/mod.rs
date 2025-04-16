@@ -1,10 +1,6 @@
-use conspire::constitutive::solid::elastic::AlmansiHamel as Base;
-
-super::implement!(
-    Base,
+super::elastic!(
     AlmansiHamel,
     "AlmansiHamel",
-    2,
     r"The Almansi-Hamel elastic constitutive model.
 
     **Parameters**

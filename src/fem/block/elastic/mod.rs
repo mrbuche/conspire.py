@@ -1,0 +1,100 @@
+use crate::{
+    PyErrGlue, constitutive::solid::elastic as constitutive, count_tts, fem::call_method,
+    replace_expr,
+};
+use conspire::{
+    fem::{
+        Connectivity, ElasticFiniteElementBlock, ElementBlock, FiniteElementBlock,
+        LinearTetrahedron, NodalCoordinatesBlock, ReferenceNodalCoordinatesBlock,
+    },
+    math::TensorVec,
+    mechanics::Scalar,
+};
+use numpy::PyArray2;
+use pyo3::prelude::*;
+
+#[pyclass]
+pub enum ElasticBlock {
+    AlmansiHamel(Py<AlmansiHamel>),
+}
+
+#[derive(FromPyObject)]
+enum ElasticModel<'py> {
+    AlmansiHamel(Bound<'py, constitutive::AlmansiHamel>),
+}
+
+#[pymethods]
+impl ElasticBlock {
+    #[new]
+    fn new(
+        py: Python,
+        model: ElasticModel,
+        connectivity: Connectivity<4>,
+        reference_nodal_coordinates: Vec<[Scalar; 3]>,
+    ) -> Result<Self, PyErr> {
+        match model {
+            ElasticModel::AlmansiHamel(model) => {
+                let bulk_modulus: Scalar = model.getattr("bulk_modulus")?.extract()?;
+                let shear_modulus: Scalar = model.getattr("shear_modulus")?.extract()?;
+                let block = AlmansiHamel::new(
+                    bulk_modulus,
+                    shear_modulus,
+                    connectivity,
+                    reference_nodal_coordinates,
+                );
+                Ok(Self::AlmansiHamel(Py::new(py, block)?))
+            }
+        }
+    }
+    fn nodal_forces<'py>(
+        &self,
+        py: Python<'py>,
+        nodal_coordinates: Vec<[Scalar; 3]>,
+    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+        match self {
+            Self::AlmansiHamel(model) => Ok(model
+                .call_method1(py, "nodal_forces", (nodal_coordinates,))
+                .unwrap()
+                .extract(py)
+                .unwrap()),
+        }
+    }
+}
+
+#[pyclass]
+pub struct AlmansiHamel {
+    block: ElementBlock<
+        LinearTetrahedron<conspire::constitutive::solid::elastic::AlmansiHamel<[Scalar; 2]>>,
+        4,
+    >,
+}
+
+#[pymethods]
+impl AlmansiHamel {
+    #[new]
+    pub fn new(
+        bulk_modulus: Scalar,
+        shear_modulus: Scalar,
+        connectivity: Connectivity<4>,
+        reference_nodal_coordinates: Vec<[Scalar; 3]>,
+    ) -> Self {
+        Self {
+            block: ElementBlock::new(
+                [bulk_modulus, shear_modulus],
+                connectivity,
+                ReferenceNodalCoordinatesBlock::new(&reference_nodal_coordinates),
+            ),
+        }
+    }
+    fn nodal_forces<'py>(
+        &self,
+        py: Python<'py>,
+        nodal_coordinates: Vec<[Scalar; 3]>,
+    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+        let forces: Vec<Vec<Scalar>> = self
+            .block
+            .nodal_forces(&NodalCoordinatesBlock::new(&nodal_coordinates))?
+            .into();
+        Ok(PyArray2::from_vec2(py, &forces)?)
+    }
+}

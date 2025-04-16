@@ -8,25 +8,14 @@ pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<AlmansiHamel>()
 }
 
-macro_rules! implement {
-    ($base: ident, $model: ident, $name: literal, $num: literal, $docs: literal, $cauchy_stress: literal, $cauchy_tangent_stiffness: literal, $first_piola_kirchhoff_stress: literal, $first_piola_kirchhoff_tangent_stiffness: literal, $second_piola_kirchhoff_stress: literal, $second_piola_kirchhoff_tangent_stiffness: literal, $($parameter: ident),+ $(,)?) => {
-        use crate::PyErrGlue;
-        use conspire::{
-            constitutive::{
-                Constitutive,
-                solid::{Solid, elastic::Elastic},
-            },
-            mechanics::Scalar,
-        };
-        use ndarray::Array;
-        use numpy::{PyArray2, PyArray4};
-        use pyo3::prelude::*;
-        use std::fmt::{self, Display, Formatter};
+macro_rules! shared {
+    ($model: ident, $name: literal, $docs: literal, $($parameter: ident),+ $(,)?) => {
         #[doc = concat!($docs)]
         #[pyclass(str)]
         pub struct $model {
-            model: $base<[Scalar; $num]>,
+            model: Inner<[Scalar; count_tts!($($parameter)?)]>,
         }
+        use std::fmt::{self, Display, Formatter};
         impl Display for $model {
             fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
                 let args = format!(concat!($(stringify!($parameter), "={}, "),+), $(self.model.$parameter()),+);
@@ -34,12 +23,30 @@ macro_rules! implement {
                 write!( f, "{}({})", $name, args)
             }
         }
+    }
+}
+pub(crate) use shared;
+
+macro_rules! elastic {
+    ($model: ident, $name: literal, $docs: literal, $cauchy_stress: literal, $cauchy_tangent_stiffness: literal, $first_piola_kirchhoff_stress: literal, $first_piola_kirchhoff_tangent_stiffness: literal, $second_piola_kirchhoff_stress: literal, $second_piola_kirchhoff_tangent_stiffness: literal, $($parameter: ident),+ $(,)?) => {
+        use crate::{PyErrGlue, count_tts, replace_expr, constitutive::solid::elastic::shared};
+        use conspire::{
+            constitutive::{
+                Constitutive,
+                solid::{Solid, elastic::{Elastic, $model as Inner}},
+            },
+            mechanics::Scalar,
+        };
+        use ndarray::Array;
+        use numpy::{PyArray2, PyArray4};
+        use pyo3::prelude::*;
+        shared!($model, $name, $docs, $($parameter),+);
         #[pymethods]
         impl $model {
             #[new]
             fn new($($parameter: Scalar),+) -> Self {
                 Self {
-                    model: $base::new([$($parameter),+]),
+                    model: Inner::new([$($parameter),+]),
                 }
             }
             /// @private
@@ -136,4 +143,4 @@ macro_rules! implement {
         }
     };
 }
-pub(crate) use implement;
+pub(crate) use elastic;

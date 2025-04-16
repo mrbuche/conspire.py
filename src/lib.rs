@@ -89,3 +89,15 @@ impl From<FromVecError> for PyErrGlue {
         }
     }
 }
+
+macro_rules! replace_expr {
+    ($_t:tt $sub:expr) => {
+        $sub
+    };
+}
+pub(crate) use replace_expr;
+
+macro_rules! count_tts {
+    ($($tts:tt)*) => {0usize $(+ replace_expr!($tts 1usize))*};
+}
+pub(crate) use count_tts;
