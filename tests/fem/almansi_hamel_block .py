@@ -89,3 +89,23 @@ def test_helmholtz_free_energy_undefined():
 
 def test_nodal_forces_zero():
     assert np.all(block.nodal_forces(reference_coordinates) == 0.0)
+
+
+def test_nodal_stiffnesses_finite_difference():
+    tan = block.nodal_stiffnesses(deformed_coordinates)
+    for a in range(len(reference_coordinates)):
+        for b in range(len(reference_coordinates)):
+            for i in range(3):
+                for j in range(3):
+                    deformed_coordinates[b, j] += epsilon / 2
+                    d_force = block.nodal_forces(
+                        deformed_coordinates
+                    )[a, i]
+                    deformed_coordinates[b, j] -= epsilon
+                    d_force -= block.nodal_forces(
+                        deformed_coordinates
+                    )[a, i]
+                    assert np.abs(
+                        tan[a, b, i, j] - d_force / epsilon
+                    ) < epsilon
+                    deformed_coordinates[b, j] += epsilon / 2

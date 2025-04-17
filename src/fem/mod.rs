@@ -7,7 +7,7 @@ use crate::constitutive::solid::{
 };
 use block::{elastic::ElasticBlock, hyperelastic::HyperelasticBlock};
 use conspire::{fem::Connectivity, mechanics::Scalar};
-use numpy::PyArray2;
+use numpy::{PyArray2, PyArray4};
 use pyo3::prelude::*;
 
 pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -182,6 +182,23 @@ impl Block {
             Self::ElasticBlock(block) => call_method!(block, py, "nodal_forces", nodal_coordinates),
             Self::HyperelasticBlock(block) => {
                 call_method!(block, py, "nodal_forces", nodal_coordinates)
+            }
+        }
+    }
+    /// $$
+    /// \mathbf{K}_{ab} = \frac{\partial\mathbf{f}_a}{\partial\mathbf{x}_b}
+    /// $$
+    fn nodal_stiffnesses<'py>(
+        &self,
+        py: Python<'py>,
+        nodal_coordinates: Vec<[Scalar; 3]>,
+    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+        match self {
+            Self::ElasticBlock(block) => {
+                call_method!(block, py, "nodal_stiffnesses", nodal_coordinates)
+            }
+            Self::HyperelasticBlock(block) => {
+                call_method!(block, py, "nodal_stiffnesses", nodal_coordinates)
             }
         }
     }

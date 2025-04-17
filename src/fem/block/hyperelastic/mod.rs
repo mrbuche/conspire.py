@@ -11,8 +11,11 @@ use conspire::{
     math::TensorVec,
     mechanics::Scalar,
 };
-use numpy::PyArray2;
+use ndarray::Array;
+use numpy::{PyArray2, PyArray4};
 use pyo3::prelude::*;
+
+const N: usize = 4;
 
 #[pyclass]
 pub enum HyperelasticBlock {
@@ -73,7 +76,7 @@ impl HyperelasticBlock {
     fn new(
         py: Python,
         model: HyperelasticModel,
-        connectivity: Connectivity<4>,
+        connectivity: Connectivity<N>,
         reference_nodal_coordinates: Vec<[Scalar; 3]>,
     ) -> Result<Self, PyErr> {
         hyperelastic_block!(
@@ -108,6 +111,13 @@ impl HyperelasticBlock {
         nodal_coordinates: Vec<[Scalar; 3]>,
     ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
         match_model!(self, py, "nodal_forces", nodal_coordinates)
+    }
+    fn nodal_stiffnesses<'py>(
+        &self,
+        py: Python<'py>,
+        nodal_coordinates: Vec<[Scalar; 3]>,
+    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+        match_model!(self, py, "nodal_stiffnesses", nodal_coordinates)
     }
 }
 
@@ -151,6 +161,21 @@ macro_rules! hyperelastic {
                     .nodal_forces(&NodalCoordinatesBlock::new(&nodal_coordinates))?
                     .into();
                 Ok(PyArray2::from_vec2(py, &forces)?)
+            }
+            fn nodal_stiffnesses<'py>(
+                &self,
+                py: Python<'py>,
+                nodal_coordinates: Vec<[Scalar; 3]>,
+            ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+                let stiffnesses: Vec<Scalar> = self
+                    .block
+                    .nodal_stiffnesses(&NodalCoordinatesBlock::new(&nodal_coordinates))?
+                    .into();
+                let nodes = nodal_coordinates.len();
+                Ok(PyArray4::from_array(
+                    py,
+                    &Array::from_shape_vec((nodes, nodes, 3, 3), stiffnesses)?,
+                ))
             }
         }
     };
