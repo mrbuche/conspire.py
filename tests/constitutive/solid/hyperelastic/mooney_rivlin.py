@@ -24,6 +24,12 @@ volumetric_small = identity * (1 + epsilon)**(1/3)
 model = MooneyRivlin(bulk_modulus, shear_modulus, extra_modulus)
 
 
+def test_str():
+    assert model.__str__() == 'MooneyRivlin(' + \
+        f'bulk_modulus={bulk_modulus}, shear_modulus={shear_modulus}' + \
+        f', extra_modulus={extra_modulus})'
+
+
 def test_helmholtz_free_energy_density_zero():
     assert model.helmholtz_free_energy_density(identity) == 0
 
