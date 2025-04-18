@@ -95,7 +95,6 @@ def test_nodal_forces_zero():
     assert np.all(block.nodal_forces(reference_coordinates) == 0.0)
 
 
-
 def test_nodal_forces_finite_difference():
     forces = block.nodal_forces(deformed_coordinates)
     for a in range(len(reference_coordinates)):
