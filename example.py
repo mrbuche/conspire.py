@@ -63,12 +63,13 @@ A[10][18] = 1
 A[11][19] = 1
 A[12][21] = 1
 
+e = 0.3
 b = np.zeros((13, 1))
-b[0] = 0.8
-b[1] = 0.8
-b[2] = 0.8
-b[3] = 0.8
-b[4] = 0.8
+b[0] = 0.5 + e
+b[1] = 0.5 + e
+b[2] = 0.5 + e
+b[3] = 0.5 + e
+b[4] = 0.5 + e
 b[5] = -0.5
 b[6] = -0.5
 b[7] = -0.5
@@ -78,49 +79,22 @@ b[10] = -0.5
 b[11] = -0.5
 b[12] = -0.5
 
-k = block.nodal_stiffnesses(coordinates)
-H = np.zeros((42, 42))
-for aa in range(14):
-    for bb in range(14):
-        for i in range(3):
-            for j in range(3):
-                H[3 * aa + i][3 * bb + j] = k[aa, bb, i, j]
-
-C = np.zeros((55, 55))
-C[:42, :42] = H
-C[42:, :42] = A
-C[:42, 42:] = A.T
-# print(np.linalg.eigvals(H))
-# print(np.linalg.eigvals(C))
-
+coords = coordinates * 1.0
+residual_norm = 1.0
+multipliers = np.zeros((len(b), 1))
 x = np.zeros((42, 1))
 for aa in range(14):
     for i in range(3):
-        x[3 * aa + i] = coordinates[aa][i]
+        x[3 * aa + i] = coords[aa][i]
 
-forces = block.nodal_forces(coordinates)
-f = np.zeros((42, 1))
-for aa in range(14):
-    for i in range(3):
-        f[3 * aa + i] = forces[aa][i]
-
-# residual = np.vstack((f, b - A.dot(x)))
-# print(residual)
-
-coords = coordinates * 1.0
-
-residual_norm = 1.0
-multipliers = np.zeros((len(b), 1))
-
-while residual_norm > 1e-3:
+while residual_norm > 1e-12:
     forces = block.nodal_forces(coords)
     f = np.zeros((42, 1))
     for aa in range(14):
         for i in range(3):
             f[3 * aa + i] = forces[aa][i]
-    residual = np.vstack((f + A.T.dot(multipliers), A.dot(x) - b))
-    # check multipliers at right indices?
-    # double check constraint indices?
+    residual = np.vstack((f - A.T.dot(multipliers), b - A.dot(x)))
+    # residual = np.vstack((f, b - A.dot(x)))
     residual_norm = np.linalg.norm(residual)
     print(residual_norm)
     k = block.nodal_stiffnesses(coordinates)
@@ -132,11 +106,14 @@ while residual_norm > 1e-3:
                     H[3 * aa + i][3 * bb + j] = k[aa, bb, i, j]
     C = np.zeros((55, 55))
     C[:42, :42] = H
-    C[42:, :42] = A
-    C[:42, 42:] = A.T
+    C[42:, :42] = -A
+    C[:42, 42:] = -A.T
     sol = np.linalg.inv(C).dot(-residual)
-    x += 0.1 * sol[:42]
-    multipliers = 0.1 * sol[42:]
+    x += sol[:42]
+    multipliers += sol[42:]
+    # multipliers = sol[42:]
     for aa in range(14):
         for i in range(3):
             coords[aa][i] = x[3 * aa + i]
+
+print(multipliers)
