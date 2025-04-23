@@ -63,7 +63,7 @@ A[10][18] = 1
 A[11][19] = 1
 A[12][21] = 1
 
-e = 0.3
+e = 1.1
 b = np.zeros((13, 1))
 b[0] = 0.5 + e
 b[1] = 0.5 + e
@@ -81,13 +81,14 @@ b[12] = -0.5
 
 coords = coordinates * 1.0
 residual_norm = 1.0
-multipliers = np.zeros((len(b), 1))
+multipliers = np.ones((len(b), 1))
 x = np.zeros((42, 1))
 for aa in range(14):
     for i in range(3):
         x[3 * aa + i] = coords[aa][i]
 
-while residual_norm > 1e-12:
+while residual_norm > 1e-8:
+    energy_0 = block.helmholtz_free_energy(coords) - multipliers.T.dot(A.dot(x) - b)
     forces = block.nodal_forces(coords)
     f = np.zeros((42, 1))
     for aa in range(14):
@@ -96,7 +97,6 @@ while residual_norm > 1e-12:
     residual = np.vstack((f - A.T.dot(multipliers), b - A.dot(x)))
     # residual = np.vstack((f, b - A.dot(x)))
     residual_norm = np.linalg.norm(residual)
-    print(residual_norm)
     k = block.nodal_stiffnesses(coordinates)
     H = np.zeros((42, 42))
     for aa in range(14):
@@ -115,5 +115,17 @@ while residual_norm > 1e-12:
     for aa in range(14):
         for i in range(3):
             coords[aa][i] = x[3 * aa + i]
+    m = 2
+    energy = block.helmholtz_free_energy(coords) - multipliers.T.dot(A.dot(x) - b)
+    #print(residual_norm, energy_0, energy)
+    while energy > energy_0:
+        x -= sol[:42] / m
+        multipliers -= sol[42:] / m
+        m *= 2
+        for aa in range(14):
+            for i in range(3):
+                coords[aa][i] = x[3 * aa + i]
+        energy = block.helmholtz_free_energy(coords) - multipliers.T.dot(A.dot(x) - b)
+        #print(energy)
 
 print(multipliers)
