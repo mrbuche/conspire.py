@@ -137,3 +137,12 @@ while residual_norm > 1e-8:
         #print(energy)
 
 print(multipliers)
+
+print(np.linalg.eig(H).eigenvalues)
+print(np.linalg.eig(C).eigenvalues)
+
+Q, R = np.linalg.qr(A.T, mode='complete')
+Z = Q[:, A.T.shape[1]:]
+B = Z.T.dot(H).dot(Z)
+print(np.linalg.eig(B).eigenvalues)
+print(np.all(np.linalg.eig(B).eigenvalues > 0))
