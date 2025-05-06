@@ -1,6 +1,7 @@
 from conspire.constitutive.solid.hyperelastic import NeoHookean
 from conspire.fem import Block
 import numpy as np
+import scipy as sp
 
 
 model = NeoHookean(13, 3)
@@ -146,3 +147,8 @@ Z = Q[:, A.T.shape[1]:]
 B = Z.T.dot(H).dot(Z)
 print(np.linalg.eig(B).eigenvalues)
 print(np.all(np.linalg.eig(B).eigenvalues > 0))
+
+L, D, P = sp.linalg.ldl(C)
+print(np.sum(np.linalg.eig(D).eigenvalues > 0) == 42)
+print(np.sum(np.linalg.eig(D).eigenvalues < 0) == 13)
+print(np.sum(np.linalg.eig(D).eigenvalues == 0) == 0)
