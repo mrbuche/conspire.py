@@ -50,29 +50,32 @@ coordinates = np.array([
 block = Block(model, connectivity, coordinates)
 
 A = np.zeros((13, 42))
-A[0][2] = 1
-A[1][5] = 1
-A[2][8] = 1
-A[3][11] = 1
-A[4][26] = 1
-A[5][14] = 1
-A[6][17] = 1
-A[7][20] = 1
-A[8][23] = 1
-A[9][29] = 1
-A[10][18] = 1
-A[11][19] = 1
-A[12][21] = 1
+A[0][0] = 1
+A[1][3] = 1
+A[2][12] = 1
+A[3][15] = 1
+A[4][39] = 1
+A[5][6] = 1
+A[6][9] = 1
+A[7][18] = 1
+A[8][21] = 1
+A[9][33] = 1
+A[10][19] = 1
+A[11][20] = 1
+A[12][23] = 1
 
 Q, R = np.linalg.qr(A.T, mode='complete')
-# print(A.T.shape, Q.shape, R.shape)
+
+print(Q)
+
 Z = Q[:, A.T.shape[1]:]
+print(A.T.shape, Q.shape, R.shape, Z.shape)
 # print(A)
 # print(Z)
 # print(np.all(A.dot(Z) == 0))
 # Z = Q[]
 
-e = 1.1
+e = 0.2
 b = np.zeros((13, 1))
 b[0] = 0.5 + e
 b[1] = 0.5 + e
@@ -126,7 +129,7 @@ while residual_norm > 1e-8:
             coords[aa][i] = x[3 * aa + i]
     m = 2
     energy = block.helmholtz_free_energy(coords) - multipliers.T.dot(A.dot(x) - b)
-    #print(residual_norm, energy_0, energy)
+    print(residual_norm, energy_0, energy)
     while energy > energy_0:
         x -= sol[:42] / m
         multipliers -= sol[42:] / m
@@ -137,16 +140,21 @@ while residual_norm > 1e-8:
         energy = block.helmholtz_free_energy(coords) - multipliers.T.dot(A.dot(x) - b)
         #print(energy)
 
-print(multipliers)
+#print(multipliers)
 
-print(np.linalg.eig(H).eigenvalues)
-print(np.linalg.eig(C).eigenvalues)
+#print(np.linalg.eig(H).eigenvalues)
+#print(np.linalg.eig(C).eigenvalues)
 
 Q, R = np.linalg.qr(A.T, mode='complete')
 Z = Q[:, A.T.shape[1]:]
 B = Z.T.dot(H).dot(Z)
-print(np.linalg.eig(B).eigenvalues)
-print(np.all(np.linalg.eig(B).eigenvalues > 0))
+#print(np.linalg.eig(B).eigenvalues)
+#print(np.all(np.linalg.eig(B).eigenvalues > 0))
+
+print(H[0][0])
+print(Z)
+#print(B)
+#print(Z.T.dot(C[:42, :42]).dot(Z))
 
 L, D, P = sp.linalg.ldl(C)
 print(np.sum(np.linalg.eig(D).eigenvalues > 0) == 42)
