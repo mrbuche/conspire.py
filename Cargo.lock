@@ -27,7 +27,7 @@ dependencies = [
 [[package]]
 name = "conspire"
 version = "0.5.6"
-source = "git+https://github.com/mrbuche/conspire.rs.git?rev=e43d206b62d1f27b61c30344080ee17c608f8142#e43d206b62d1f27b61c30344080ee17c608f8142"
+source = "git+https://github.com/mrbuche/conspire.rs.git?rev=4716ccfc87bd614f40fc89bd863fc4a4ef01a127#4716ccfc87bd614f40fc89bd863fc4a4ef01a127"
 
 [[package]]
 name = "heck"
