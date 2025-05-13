@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "maturin"
-requires = ["maturin==1.8.4"]
+requires = ["maturin==1.8.6"]
 
 [project]
 authors = [
