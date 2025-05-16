@@ -8,12 +8,12 @@ authors = [
   {name = "Michael R. Buche"},
 ]
 classifiers = [
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-    "Development Status :: 5 - Production/Stable",
-    "Intended Audience :: Science/Research",
-    "Topic :: Scientific/Engineering",
-    "Programming Language :: Python",
-    "Programming Language :: Rust",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering",
+  "Programming Language :: Python",
+  "Programming Language :: Rust",
 ]
 description = "c o n s p i r e"
 dependencies = ["numpy"]
@@ -23,7 +23,7 @@ requires-python = ">=3.8"
 
 [project.optional-dependencies]
 dist = ["build", "maturin", "pytest", "twine"]
-docs = ["matplotlib", "pdoc"]
+docs = ["matplotlib", "maturin", "pdoc"]
 test = ["maturin", "pytest"]
 
 [project.urls]
