@@ -24,7 +24,7 @@ requires-python = ">=3.8"
 [project.optional-dependencies]
 dist = ["build", "maturin", "pytest", "twine"]
 docs = ["matplotlib", "maturin", "pdoc"]
-test = ["maturin", "pytest"]
+test = ["maturin", "pytest", "ruff"]
 
 [project.urls]
 Documentation = "https://conspire.readthedocs.io"
