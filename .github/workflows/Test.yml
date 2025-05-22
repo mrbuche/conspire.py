@@ -40,8 +40,8 @@ jobs:
       - name: Sync
         run: uv sync --extra test
       - name: Check
-        run: ruff check
+        run: uv run ruff check
       - name: Format
-        run: ruff format --check
+        run: uv run ruff format --check
       - name: Test
         run: uv run pytest
