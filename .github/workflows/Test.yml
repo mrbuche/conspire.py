@@ -39,5 +39,9 @@ jobs:
         uses: astral-sh/setup-uv@v6
       - name: Sync
         run: uv sync --extra test
+      - name: Check
+        run: uv run ruff check
+      - name: Format
+        run: uv run ruff format --check
       - name: Test
         run: uv run pytest
