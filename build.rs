@@ -34,7 +34,10 @@ fn main() -> Result<(), Error> {
             .expect("Model description unavailable")
             .replace("$`", "$")
             .replace("`$", "$")
-            .replace("[Neo-Hookean model](NeoHookean)", "[Neo-Hookean model](#NeoHookean)"),
+            .replace(
+                "[Neo-Hookean model](NeoHookean)",
+                "[Neo-Hookean model](#NeoHookean)",
+            ),
         )?;
         METHODS.iter().try_for_each(|method| {
             write(
