@@ -24,7 +24,7 @@ pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
 }
 
 macro_rules! hyperelastic {
-    ($model: ident, $name: literal, $docs: literal, $helmholtz_free_energy_density: literal, $cauchy_stress: literal, $cauchy_tangent_stiffness: literal, $first_piola_kirchhoff_stress: literal, $first_piola_kirchhoff_tangent_stiffness: literal, $second_piola_kirchhoff_stress: literal, $second_piola_kirchhoff_tangent_stiffness: literal, $($parameter: ident),+ $(,)?) => {
+    ($model: ident, $name: literal, $($parameter: ident),+ $(,)?) => {
         use crate::{PyErrGlue, count_tts, replace_expr, constitutive::solid::elastic::shared};
         use conspire::{
             constitutive::{
@@ -36,7 +36,7 @@ macro_rules! hyperelastic {
         use ndarray::Array;
         use numpy::{PyArray2, PyArray4};
         use pyo3::prelude::*;
-        shared!($model, $name, $docs, $($parameter),+);
+        shared!($model, $name, $($parameter),+);
         #[pymethods]
         impl $model {
             #[new]
@@ -52,7 +52,7 @@ macro_rules! hyperelastic {
                     self.model.$parameter()
                 }
             )+
-            #[doc = concat!("$$", $helmholtz_free_energy_density, "$$")]
+            #[doc = include_str!("helmholtz_free_energy_density.md")]
             fn helmholtz_free_energy_density(
                 &self,
                 deformation_gradient: Vec<Vec<Scalar>>,
@@ -61,7 +61,7 @@ macro_rules! hyperelastic {
                     .model
                     .helmholtz_free_energy_density(&deformation_gradient.into())?)
             }
-            #[doc = concat!("$$", $cauchy_stress, "$$")]
+            #[doc = include_str!("cauchy_stress.md")]
             fn cauchy_stress<'py>(
                 &self,
                 py: Python<'py>,
@@ -73,7 +73,7 @@ macro_rules! hyperelastic {
                     .into();
                 Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
             }
-            #[doc = concat!("$$", $cauchy_tangent_stiffness, "$$")]
+            #[doc = include_str!("cauchy_tangent_stiffness.md")]
             fn cauchy_tangent_stiffness<'py>(
                 &self,
                 py: Python<'py>,
@@ -88,7 +88,7 @@ macro_rules! hyperelastic {
                     &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
                 ))
             }
-            #[doc = concat!("$$", $first_piola_kirchhoff_stress, "$$")]
+            #[doc = include_str!("first_piola_kirchhoff_stress.md")]
             fn first_piola_kirchhoff_stress<'py>(
                 &self,
                 py: Python<'py>,
@@ -100,7 +100,7 @@ macro_rules! hyperelastic {
                     .into();
                 Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
             }
-            #[doc = concat!("$$", $first_piola_kirchhoff_tangent_stiffness, "$$")]
+            #[doc = include_str!("first_piola_kirchhoff_tangent_stiffness.md")]
             fn first_piola_kirchhoff_tangent_stiffness<'py>(
                 &self,
                 py: Python<'py>,
@@ -115,7 +115,7 @@ macro_rules! hyperelastic {
                     &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
                 ))
             }
-            #[doc = concat!("$$", $second_piola_kirchhoff_stress, "$$")]
+            #[doc = include_str!("second_piola_kirchhoff_stress.md")]
             fn second_piola_kirchhoff_stress<'py>(
                 &self,
                 py: Python<'py>,
@@ -127,7 +127,7 @@ macro_rules! hyperelastic {
                     .into();
                 Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
             }
-            #[doc = concat!("$$", $second_piola_kirchhoff_tangent_stiffness, "$$")]
+            #[doc = include_str!("second_piola_kirchhoff_tangent_stiffness.md")]
             fn second_piola_kirchhoff_tangent_stiffness<'py>(
                 &self,
                 py: Python<'py>,

@@ -18,7 +18,7 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 name = "conspire"
 version = "0.2.3"
 dependencies = [
- "conspire 0.5.6",
+ "conspire 0.5.8",
  "ndarray",
  "numpy",
  "pyo3",
@@ -26,8 +26,7 @@ dependencies = [
 
 [[package]]
 name = "conspire"
-version = "0.5.6"
-source = "git+https://github.com/mrbuche/conspire.rs.git?rev=2630ed2597c98d791c5c5f747e789241f2461399#2630ed2597c98d791c5c5f747e789241f2461399"
+version = "0.5.8"
 
 [[package]]
 name = "heck"
