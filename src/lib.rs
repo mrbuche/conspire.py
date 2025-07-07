@@ -69,7 +69,7 @@ impl From<PyErrGlue> for PyErr {
 impl From<ConstitutiveError> for PyErrGlue {
     fn from(error: ConstitutiveError) -> Self {
         PyErrGlue {
-            message: format!("{:?}\x1B[A", error),
+            message: format!("{error:?}\x1B[A"),
         }
     }
 }
