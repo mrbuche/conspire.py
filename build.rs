@@ -35,7 +35,7 @@ fn main() -> Result<(), Error> {
             .replace("$`", "$")
             .replace("`$", "$")
             .replace(
-                "[Neo-Hookean model](NeoHookean)",
+                "[Neo-Hookean model](super::NeoHookean)",
                 "[Neo-Hookean model](#NeoHookean)",
             ),
         )?;
