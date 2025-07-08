@@ -29,7 +29,7 @@ jobs:
       - name: UV
         uses: astral-sh/setup-uv@v6
       - name: Sync
-        run: uv sync --extra dist
+        run: uv sync --extra dist --upgrade
       - name: Source
         run: uv run python -m build . --sdist
       - name: Check
@@ -62,7 +62,7 @@ jobs:
       - name: UV
         uses: astral-sh/setup-uv@v6
       - name: Sync
-        run: uv sync --extra dist
+        run: uv sync --extra dist --upgrade
       - name: Wheel
         run: uv run maturin build --release
       - name: Check
@@ -90,9 +90,11 @@ jobs:
       - name: UV
         uses: astral-sh/setup-uv@v6
       - name: Sync
-        run: uv sync --extra dist
+        run: uv sync --extra dist --upgrade
       - name: Wheels
         run: mv ./*-dist*/*.whl dist/
+      - name: Unsupported
+        run: rm -r dist/*-linux_x86_64.whl
       - name: Upload
         if: github.event_name == 'release'
         run: uv run twine upload -u __token__ -p ${{ secrets.PYPI_TOKEN }} dist/*

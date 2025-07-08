@@ -40,7 +40,7 @@ jobs:
       - name: UV
         uses: astral-sh/setup-uv@v6
       - name: Sync
-        run: uv sync --extra test
+        run: uv sync --extra test --upgrade
       - name: Check
         run: uv run ruff check
       - name: Format
