@@ -91,8 +91,14 @@ jobs:
         uses: astral-sh/setup-uv@v6
       - name: Sync
         run: uv sync --extra dist
+      - name: Foo
+        run: ls ./*-dist*/
+      - name: Bar
+        run: ls ./*-dist*/*.whl
       - name: Wheels
         run: mv ./*-dist*/*.whl dist/
+      - name: Baz
+        run: ls dist/
       - name: Upload
         if: github.event_name == 'release'
         run: uv run twine upload -u __token__ -p ${{ secrets.PYPI_TOKEN }} dist/*
