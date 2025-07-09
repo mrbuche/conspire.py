@@ -27,7 +27,7 @@ jobs:
       - name: UV
         uses: astral-sh/setup-uv@v6
       - name: Sync
-        run: uv sync --extra dist --upgrade
+        run: uv sync --extra dist
       - name: Source
         run: uv run python -m build . --sdist
       - name: Check
@@ -58,7 +58,7 @@ jobs:
       - name: UV
         uses: astral-sh/setup-uv@v6
       - name: Sync
-        run: uv sync --extra dist --upgrade
+        run: uv sync --extra dist
       - name: Wheel
         run: uv run maturin build --release
       - name: Check
@@ -84,7 +84,7 @@ jobs:
       - name: UV
         uses: astral-sh/setup-uv@v6
       - name: Sync
-        run: uv sync --extra dist --upgrade
+        run: uv sync --extra dist
       - name: Wheels
         run: mv ./*-dist*/*.whl dist/
       - name: Unsupported
