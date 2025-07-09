@@ -10,7 +10,6 @@ pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
 macro_rules! shared {
     ($model: ident, $name: literal, $($parameter: ident),+ $(,)?) => {
-        #[doc = include_str!("model.md")]
         #[pyclass(str)]
         pub struct $model {
             model: Inner<[Scalar; count_tts!($($parameter)?)]>,
@@ -59,7 +58,6 @@ macro_rules! elastic {
             pub fn shear_modulus(&self) -> &Scalar {
                 self.model.shear_modulus()
             }
-            #[doc = include_str!("cauchy_stress.md")]
             fn cauchy_stress<'py>(
                 &self,
                 py: Python<'py>,
@@ -71,7 +69,6 @@ macro_rules! elastic {
                     .into();
                 Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
             }
-            #[doc = include_str!("cauchy_tangent_stiffness.md")]
             fn cauchy_tangent_stiffness<'py>(
                 &self,
                 py: Python<'py>,
@@ -86,7 +83,6 @@ macro_rules! elastic {
                     &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
                 ))
             }
-            #[doc = include_str!("first_piola_kirchhoff_stress.md")]
             fn first_piola_kirchhoff_stress<'py>(
                 &self,
                 py: Python<'py>,
@@ -98,7 +94,6 @@ macro_rules! elastic {
                     .into();
                 Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
             }
-            #[doc = include_str!("first_piola_kirchhoff_tangent_stiffness.md")]
             fn first_piola_kirchhoff_tangent_stiffness<'py>(
                 &self,
                 py: Python<'py>,
@@ -113,7 +108,6 @@ macro_rules! elastic {
                     &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
                 ))
             }
-            #[doc = include_str!("second_piola_kirchhoff_stress.md")]
             fn second_piola_kirchhoff_stress<'py>(
                 &self,
                 py: Python<'py>,
@@ -125,7 +119,6 @@ macro_rules! elastic {
                     .into();
                 Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
             }
-            #[doc = include_str!("second_piola_kirchhoff_tangent_stiffness.md")]
             fn second_piola_kirchhoff_tangent_stiffness<'py>(
                 &self,
                 py: Python<'py>,
