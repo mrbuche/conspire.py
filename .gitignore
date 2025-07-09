@@ -1,3 +1,4 @@
+src/**/*.md
 dist/
 target/
 .venv/
