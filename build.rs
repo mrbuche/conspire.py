@@ -9,7 +9,7 @@ use conspire::constitutive::solid::{
 };
 
 fn main() -> Result<(), Error> {
-    let models = vec![
+    let models = [
         almansi_hamel(),
         arruda_boyce(),
         fung(),
