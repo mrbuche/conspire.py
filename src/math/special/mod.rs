@@ -1,10 +1,11 @@
-use conspire::math::special;
+use conspire::math::{TensorRank1, special};
 use pyo3::prelude::*;
 
 pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(lambert_w, m)?)?;
     m.add_function(wrap_pyfunction!(langevin, m)?)?;
-    m.add_function(wrap_pyfunction!(inverse_langevin, m)?)
+    m.add_function(wrap_pyfunction!(inverse_langevin, m)?)?;
+    m.add_function(wrap_pyfunction!(rosenbrock, m)?)
 }
 
 /// Returns the Lambert W function.
@@ -35,4 +36,14 @@ pub fn langevin(x: f64) -> f64 {
 #[pyfunction]
 pub fn inverse_langevin(y: f64) -> f64 {
     special::inverse_langevin(y)
+}
+
+/// Returns the Rosenbrock function.
+///
+/// $$
+/// f(\mathbf{x}) = \sum_{i=1}^{N-1} \left[\left(a - x_i\right)^2 + b\left(x_{i+1} - x_i^2\right)^2\right]
+/// $$
+#[pyfunction]
+pub fn rosenbrock(x: Vec<f64>, a: f64, b: f64) -> f64 {
+    special::rosenbrock(&TensorRank1::<2, 1>::from(x), a, b)
 }
