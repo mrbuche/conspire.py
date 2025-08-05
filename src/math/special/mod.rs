@@ -1,4 +1,4 @@
-use conspire::math::{TensorRank1, special};
+use conspire::math::{TensorVec, Vector, special};
 use pyo3::prelude::*;
 
 pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -45,5 +45,5 @@ pub fn inverse_langevin(y: f64) -> f64 {
 /// $$
 #[pyfunction]
 pub fn rosenbrock(x: Vec<f64>, a: f64, b: f64) -> f64 {
-    special::rosenbrock(&TensorRank1::<2, 1>::from(x), a, b)
+    special::rosenbrock(&Vector::new(&x), a, b)
 }
