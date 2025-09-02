@@ -19,7 +19,7 @@ description = "The Python interface to conspire."
 dependencies = ["numpy"]
 dynamic = ["version"]
 name = "conspire"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 
 [project.optional-dependencies]
 dist = ["build", "maturin", "pytest", "twine"]
