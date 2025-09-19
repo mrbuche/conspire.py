@@ -2,7 +2,7 @@ mod constitutive;
 mod fem;
 mod math;
 
-use ::conspire::constitutive::ConstitutiveError;
+use ::conspire::{constitutive::ConstitutiveError, fem::FiniteElementBlockError};
 use ndarray::ShapeError;
 use numpy::FromVecError;
 use pyo3::{exceptions::PyTypeError, prelude::*};
@@ -68,6 +68,14 @@ impl From<PyErrGlue> for PyErr {
 
 impl From<ConstitutiveError> for PyErrGlue {
     fn from(error: ConstitutiveError) -> Self {
+        PyErrGlue {
+            message: format!("{error:?}\x1B[A"),
+        }
+    }
+}
+
+impl From<FiniteElementBlockError> for PyErrGlue {
+    fn from(error: FiniteElementBlockError) -> Self {
         PyErrGlue {
             message: format!("{error:?}\x1B[A"),
         }
