@@ -172,9 +172,9 @@ macro_rules! hyperelastic {
                     .nodal_stiffnesses(&NodalCoordinatesBlock::new(&nodal_coordinates))?
                     .into();
                 let nodes = nodal_coordinates.len();
-                Ok(PyArray4::from_array(
+                Ok(PyArray4::from_owned_array(
                     py,
-                    &Array::from_shape_vec((nodes, nodes, 3, 3), stiffnesses)?,
+                    Array::from_shape_vec((nodes, nodes, 3, 3), stiffnesses)?,
                 ))
             }
         }

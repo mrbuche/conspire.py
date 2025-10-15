@@ -83,9 +83,9 @@ macro_rules! hyperelastic {
                     .model
                     .cauchy_tangent_stiffness(&deformation_gradient.into())?
                     .into();
-                Ok(PyArray4::from_array(
+                Ok(PyArray4::from_owned_array(
                     py,
-                    &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
+                    Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
                 ))
             }
             #[doc = include_str!("first_piola_kirchhoff_stress.md")]
@@ -110,9 +110,9 @@ macro_rules! hyperelastic {
                     .model
                     .first_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
                     .into();
-                Ok(PyArray4::from_array(
+                Ok(PyArray4::from_owned_array(
                     py,
-                    &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
+                    Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
                 ))
             }
             #[doc = include_str!("second_piola_kirchhoff_stress.md")]
@@ -137,9 +137,9 @@ macro_rules! hyperelastic {
                     .model
                     .second_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
                     .into();
-                Ok(PyArray4::from_array(
+                Ok(PyArray4::from_owned_array(
                     py,
-                    &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
+                    Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
                 ))
             }
         }
