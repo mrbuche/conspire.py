@@ -14,7 +14,7 @@ conspire = { version = "=0.5.11", features = ["doc", "fem"] }
 conspire = { version = "=0.5.11", features = ["doc", "fem"] }
 ndarray = { version = "=0.16.1" }
 numpy = { version = "=0.26.0" }
-pyo3 = { features = ["extension-module"], version = "=0.27.0" }
+pyo3 = { features = ["extension-module"], version = "=0.27.1" }
 
 [profile.release]
 codegen-units = 1
