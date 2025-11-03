@@ -167,14 +167,15 @@ macro_rules! hyperelastic {
                 py: Python<'py>,
                 nodal_coordinates: Vec<[Scalar; 3]>,
             ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
-                let stiffnesses: Vec<Scalar> = self
-                    .block
-                    .nodal_stiffnesses(&NodalCoordinatesBlock::new(&nodal_coordinates))?
-                    .into();
                 let nodes = nodal_coordinates.len();
-                Ok(PyArray4::from_array(
+                Ok(PyArray4::from_owned_array(
                     py,
-                    &Array::from_shape_vec((nodes, nodes, 3, 3), stiffnesses)?,
+                    Array::from_shape_vec(
+                        (nodes, nodes, 3, 3),
+                        self.block
+                            .nodal_stiffnesses(&NodalCoordinatesBlock::new(&nodal_coordinates))?
+                            .into(),
+                    )?,
                 ))
             }
         }
