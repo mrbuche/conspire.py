@@ -77,13 +77,15 @@ macro_rules! elastic {
                 py: Python<'py>,
                 deformation_gradient: Vec<Vec<Scalar>>,
             ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
-                let cauchy_tangent_stiffness: Vec<Scalar> = self
-                    .model
-                    .cauchy_tangent_stiffness(&deformation_gradient.into())?
-                    .into();
                 Ok(PyArray4::from_array(
                     py,
-                    &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
+                    &Array::from_shape_vec(
+                        (3, 3, 3, 3),
+                        self.model
+                            .cauchy_tangent_stiffness(
+                                &deformation_gradient.into()
+                            )?.into()
+                    )?,
                 ))
             }
             #[doc = include_str!("first_piola_kirchhoff_stress.md")]
@@ -104,13 +106,15 @@ macro_rules! elastic {
                 py: Python<'py>,
                 deformation_gradient: Vec<Vec<Scalar>>,
             ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
-                let cauchy_tangent_stiffness: Vec<Scalar> = self
-                    .model
-                    .first_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
-                    .into();
                 Ok(PyArray4::from_array(
                     py,
-                    &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
+                    &Array::from_shape_vec(
+                        (3, 3, 3, 3),
+                        self.model
+                            .first_piola_kirchhoff_tangent_stiffness(
+                                &deformation_gradient.into()
+                            )?.into()
+                    )?,
                 ))
             }
             #[doc = include_str!("second_piola_kirchhoff_stress.md")]
@@ -131,13 +135,15 @@ macro_rules! elastic {
                 py: Python<'py>,
                 deformation_gradient: Vec<Vec<Scalar>>,
             ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
-                let cauchy_tangent_stiffness: Vec<Scalar> = self
-                    .model
-                    .second_piola_kirchhoff_tangent_stiffness(&deformation_gradient.into())?
-                    .into();
                 Ok(PyArray4::from_array(
                     py,
-                    &Array::from_shape_vec((3, 3, 3, 3), cauchy_tangent_stiffness)?,
+                    &Array::from_shape_vec(
+                        (3, 3, 3, 3),
+                        self.model
+                            .second_piola_kirchhoff_tangent_stiffness(
+                                &deformation_gradient.into()
+                            )?.into()
+                    )?,
                 ))
             }
         }
