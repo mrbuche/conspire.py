@@ -12,8 +12,8 @@ conspire = { features = ["doc", "fem"], git = "https://github.com/mrbuche/conspi
 
 [dependencies]
 conspire = { features = ["doc", "fem"], git = "https://github.com/mrbuche/conspire.rs.git", branch = "dev" }
-ndarray = { version = "=0.16.1" }
-numpy = { version = "=0.27.0" }
+ndarray = { version = "=0.17.1" }
+numpy = { version = "=0.27.1" }
 pyo3 = { features = ["extension-module"], version = "=0.27.2" }
 
 [profile.release]
