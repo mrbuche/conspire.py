@@ -9,7 +9,7 @@ pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
 }
 
 macro_rules! shared {
-    ($model: ident, $name: literal, $($parameter: ident),+ $(,)?) => {
+    ($model: ident, $($parameter: ident),+ $(,)?) => {
         #[doc = include_str!("doc.md")]
         #[pyclass(str)]
         pub struct $model (Inner);
@@ -18,7 +18,7 @@ macro_rules! shared {
             fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
                 let args = format!(concat!($(stringify!($parameter), "={}, "),+), $(self.0.$parameter()),+);
                 let args = args.strip_suffix(", ").unwrap();
-                write!( f, "{}({})", $name, args)
+                write!( f, "{}({})", stringify!($model), args)
             }
         }
     }
@@ -26,7 +26,7 @@ macro_rules! shared {
 pub(crate) use shared;
 
 macro_rules! elastic {
-    ($model: ident, $name: literal, $($parameter: ident),+ $(,)?) => {
+    ($model: ident, $($parameter: ident),+ $(,)?) => {
         use crate::{PyErrGlue, constitutive::solid::elastic::shared};
         use conspire::{
             constitutive::{
@@ -37,7 +37,7 @@ macro_rules! elastic {
         use ndarray::Array;
         use numpy::{PyArray2, PyArray4};
         use pyo3::prelude::*;
-        shared!($model, $name, $($parameter),+);
+        shared!($model, $($parameter),+);
         #[pymethods]
         impl $model {
             #[new]

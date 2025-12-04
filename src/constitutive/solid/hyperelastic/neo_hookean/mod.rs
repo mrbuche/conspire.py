@@ -1,1 +1,1 @@
-super::hyperelastic!(NeoHookean, "NeoHookean", bulk_modulus, shear_modulus,);
+super::hyperelastic!(NeoHookean, bulk_modulus, shear_modulus,);

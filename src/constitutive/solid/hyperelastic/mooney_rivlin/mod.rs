@@ -1,7 +1,1 @@
-super::hyperelastic!(
-    MooneyRivlin,
-    "MooneyRivlin",
-    bulk_modulus,
-    shear_modulus,
-    extra_modulus,
-);
+super::hyperelastic!(MooneyRivlin, bulk_modulus, shear_modulus, extra_modulus,);

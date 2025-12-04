@@ -2,7 +2,10 @@ mod constitutive;
 mod fem;
 mod math;
 
-use ::conspire::{constitutive::ConstitutiveError, fem::FiniteElementBlockError};
+use ::conspire::{
+    constitutive::ConstitutiveError, fem::FiniteElementBlockError,
+    math::integrate::IntegrationError,
+};
 use ndarray::ShapeError;
 use numpy::FromVecError;
 use pyo3::{exceptions::PyTypeError, prelude::*};
@@ -24,7 +27,7 @@ fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     let submodule_fem = PyModule::new(py, "fem")?;
     submodule_math.setattr(
         "__doc__",
-        "Mathematics library.\n\n - [special](math/special.html) - Special functions.",
+        "Mathematics library.\n\n - [integrate](math/integrate.html) - Integration and ODEs.\n - [special](math/special.html) - Special functions.",
     )?;
     submodule_constitutive.setattr(
         "__doc__",
@@ -68,6 +71,14 @@ impl From<PyErrGlue> for PyErr {
 
 impl From<ConstitutiveError> for PyErrGlue {
     fn from(error: ConstitutiveError) -> Self {
+        PyErrGlue {
+            message: format!("{error:?}\x1B[A"),
+        }
+    }
+}
+
+impl From<IntegrationError> for PyErrGlue {
+    fn from(error: IntegrationError) -> Self {
         PyErrGlue {
             message: format!("{error:?}\x1B[A"),
         }

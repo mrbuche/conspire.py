@@ -24,7 +24,7 @@ pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
 }
 
 macro_rules! hyperelastic {
-    ($model: ident, $name: literal, $($parameter: ident),+ $(,)?) => {
+    ($model: ident, $($parameter: ident),+ $(,)?) => {
         use crate::{PyErrGlue, constitutive::solid::elastic::shared};
         use conspire::{
             constitutive::{
@@ -35,7 +35,7 @@ macro_rules! hyperelastic {
         use ndarray::Array;
         use numpy::{PyArray2, PyArray4};
         use pyo3::prelude::*;
-        shared!($model, $name, $($parameter),+);
+        shared!($model, $($parameter),+);
         #[pymethods]
         impl $model {
             #[new]
