@@ -24,7 +24,7 @@ fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     let submodule_fem = PyModule::new(py, "fem")?;
     submodule_math.setattr(
         "__doc__",
-        "Mathematics library.\n\n - [special](math/special.html) - Special functions.",
+        "Mathematics library.\n\n - [integrate](math/integrate.html) - Integration and ODEs.\n - [special](math/special.html) - Special functions.",
     )?;
     submodule_constitutive.setattr(
         "__doc__",
