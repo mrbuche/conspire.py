@@ -12,13 +12,11 @@ macro_rules! shared {
     ($model: ident, $name: literal, $($parameter: ident),+ $(,)?) => {
         #[doc = include_str!("doc.md")]
         #[pyclass(str)]
-        pub struct $model {
-            model: Inner<[Scalar; count_tts!($($parameter)?)]>,
-        }
+        pub struct $model (Inner);
         use std::fmt::{self, Display, Formatter};
         impl Display for $model {
             fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-                let args = format!(concat!($(stringify!($parameter), "={}, "),+), $(self.model.$parameter()),+);
+                let args = format!(concat!($(stringify!($parameter), "={}, "),+), $(self.0.$parameter()),+);
                 let args = args.strip_suffix(", ").unwrap();
                 write!( f, "{}({})", $name, args)
             }
@@ -29,10 +27,9 @@ pub(crate) use shared;
 
 macro_rules! elastic {
     ($model: ident, $name: literal, $($parameter: ident),+ $(,)?) => {
-        use crate::{PyErrGlue, count_tts, replace_expr, constitutive::solid::elastic::shared};
+        use crate::{PyErrGlue, constitutive::solid::elastic::shared};
         use conspire::{
             constitutive::{
-                Constitutive,
                 solid::{Solid, elastic::{Elastic, $model as Inner}},
             },
             mechanics::Scalar,
@@ -45,20 +42,19 @@ macro_rules! elastic {
         impl $model {
             #[new]
             fn new($($parameter: Scalar),+) -> Self {
-                Self {
-                    model: Inner::new([$($parameter),+]),
+                Self (
+                    Inner {
+                        $($parameter),+
+                    }
+                )
+            }
+            $(
+                /// @private
+                #[getter]
+                pub fn $parameter(&self) -> Scalar {
+                    self.0.$parameter()
                 }
-            }
-            /// @private
-            #[getter]
-            pub fn bulk_modulus(&self) -> &Scalar {
-                self.model.bulk_modulus()
-            }
-            /// @private
-            #[getter]
-            pub fn shear_modulus(&self) -> &Scalar {
-                self.model.shear_modulus()
-            }
+            )+
             #[doc = include_str!("cauchy_stress.md")]
             fn cauchy_stress<'py>(
                 &self,
@@ -66,7 +62,7 @@ macro_rules! elastic {
                 deformation_gradient: Vec<Vec<Scalar>>,
             ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
                 let cauchy_stress: Vec<Vec<Scalar>> = self
-                    .model
+                    .0
                     .cauchy_stress(&deformation_gradient.into())?
                     .into();
                 Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
@@ -81,7 +77,7 @@ macro_rules! elastic {
                     py,
                     &Array::from_shape_vec(
                         (3, 3, 3, 3),
-                        self.model
+                        self.0
                             .cauchy_tangent_stiffness(
                                 &deformation_gradient.into()
                             )?.into()
@@ -95,7 +91,7 @@ macro_rules! elastic {
                 deformation_gradient: Vec<Vec<Scalar>>,
             ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
                 let cauchy_stress: Vec<Vec<Scalar>> = self
-                    .model
+                    .0
                     .first_piola_kirchhoff_stress(&deformation_gradient.into())?
                     .into();
                 Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
@@ -110,7 +106,7 @@ macro_rules! elastic {
                     py,
                     &Array::from_shape_vec(
                         (3, 3, 3, 3),
-                        self.model
+                        self.0
                             .first_piola_kirchhoff_tangent_stiffness(
                                 &deformation_gradient.into()
                             )?.into()
@@ -124,7 +120,7 @@ macro_rules! elastic {
                 deformation_gradient: Vec<Vec<Scalar>>,
             ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
                 let cauchy_stress: Vec<Vec<Scalar>> = self
-                    .model
+                    .0
                     .second_piola_kirchhoff_stress(&deformation_gradient.into())?
                     .into();
                 Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
@@ -139,7 +135,7 @@ macro_rules! elastic {
                     py,
                     &Array::from_shape_vec(
                         (3, 3, 3, 3),
-                        self.model
+                        self.0
                             .second_piola_kirchhoff_tangent_stiffness(
                                 &deformation_gradient.into()
                             )?.into()
