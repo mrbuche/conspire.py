@@ -13,7 +13,7 @@ macro_rules! shared {
         #[doc = include_str!("doc.md")]
         #[pyclass(str)]
         pub struct $model {
-            model: Inner<[Scalar; count_tts!($($parameter)?)]>,
+            model: Inner,
         }
         use std::fmt::{self, Display, Formatter};
         impl Display for $model {
@@ -45,18 +45,19 @@ macro_rules! elastic {
         impl $model {
             #[new]
             fn new($($parameter: Scalar),+) -> Self {
-                Self {
-                    model: Inner::new([$($parameter),+]),
-                }
+                // Self {
+                //     model: Inner::new([$($parameter),+]),
+                // }
+                todo!()
             }
             /// @private
             #[getter]
-            pub fn bulk_modulus(&self) -> &Scalar {
+            pub fn bulk_modulus(&self) -> Scalar {
                 self.model.bulk_modulus()
             }
             /// @private
             #[getter]
-            pub fn shear_modulus(&self) -> &Scalar {
+            pub fn shear_modulus(&self) -> Scalar {
                 self.model.shear_modulus()
             }
             #[doc = include_str!("cauchy_stress.md")]

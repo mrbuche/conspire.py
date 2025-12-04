@@ -41,14 +41,15 @@ macro_rules! hyperelastic {
         impl $model {
             #[new]
             fn new($($parameter: Scalar),+) -> Self {
-                Self {
-                    model: Inner::new([$($parameter),+]),
-                }
+                // Self {
+                //     model: Inner::new([$($parameter),+]),
+                // }
+                todo!()
             }
             $(
                 /// @private
                 #[getter]
-                pub fn $parameter(&self) -> &Scalar {
+                pub fn $parameter(&self) -> Scalar {
                     self.model.$parameter()
                 }
             )+

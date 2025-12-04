@@ -125,7 +125,7 @@ macro_rules! hyperelastic {
     ($element: ident, $n: literal, $model: ident, $($parameter: ident),+ $(,)?) => {
         #[pyclass]
         pub struct $model {
-            block: ElementBlock<$element<conspire::constitutive::solid::hyperelastic::$model<[Scalar; count_tts!($($parameter)?)]>>, $n>,
+            block: ElementBlock<$element<conspire::constitutive::solid::hyperelastic::$model>, $n>,
         }
         #[pymethods]
         impl $model {
@@ -135,13 +135,14 @@ macro_rules! hyperelastic {
                 connectivity: Connectivity<$n>,
                 reference_nodal_coordinates: Vec<[Scalar; 3]>,
             ) -> Self {
-                Self {
-                    block: ElementBlock::new(
-                        [$($parameter),+],
-                        connectivity,
-                        ReferenceNodalCoordinatesBlock::new(&reference_nodal_coordinates),
-                    ),
-                }
+                // Self {
+                //     block: ElementBlock::new(
+                //         [$($parameter),+],
+                //         connectivity,
+                //         ReferenceNodalCoordinatesBlock::from(reference_nodal_coordinates),
+                //     ),
+                // }
+                todo!()
             }
             fn helmholtz_free_energy(
                 &self,
@@ -149,7 +150,7 @@ macro_rules! hyperelastic {
             ) -> Result<Scalar, PyErrGlue> {
                 Ok(self
                     .block
-                    .helmholtz_free_energy(&NodalCoordinatesBlock::new(&nodal_coordinates))?)
+                    .helmholtz_free_energy(&NodalCoordinatesBlock::from(nodal_coordinates))?)
             }
             fn nodal_forces<'py>(
                 &self,
@@ -158,7 +159,7 @@ macro_rules! hyperelastic {
             ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
                 let forces: Vec<Vec<Scalar>> = self
                     .block
-                    .nodal_forces(&NodalCoordinatesBlock::new(&nodal_coordinates))?
+                    .nodal_forces(&NodalCoordinatesBlock::from(nodal_coordinates))?
                     .into();
                 Ok(PyArray2::from_vec2(py, &forces)?)
             }
@@ -173,7 +174,7 @@ macro_rules! hyperelastic {
                     Array::from_shape_vec(
                         (nodes, nodes, 3, 3),
                         self.block
-                            .nodal_stiffnesses(&NodalCoordinatesBlock::new(&nodal_coordinates))?
+                            .nodal_stiffnesses(&NodalCoordinatesBlock::from(nodal_coordinates))?
                             .into(),
                     )?,
                 ))

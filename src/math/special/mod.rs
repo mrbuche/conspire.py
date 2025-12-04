@@ -45,5 +45,5 @@ pub fn inverse_langevin(y: f64) -> f64 {
 /// $$
 #[pyfunction]
 pub fn rosenbrock(x: Vec<f64>, a: f64, b: f64) -> f64 {
-    special::rosenbrock(&Vector::new(&x), a, b)
+    special::rosenbrock(&Vector::from(x), a, b)
 }

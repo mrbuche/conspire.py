@@ -71,7 +71,7 @@ impl ElasticBlock {
 #[pyclass]
 pub struct AlmansiHamel {
     block: ElementBlock<
-        LinearTetrahedron<conspire::constitutive::solid::elastic::AlmansiHamel<[Scalar; 2]>>,
+        LinearTetrahedron<conspire::constitutive::solid::elastic::AlmansiHamel>,
         N,
     >,
 }
@@ -85,13 +85,14 @@ impl AlmansiHamel {
         connectivity: Connectivity<N>,
         reference_nodal_coordinates: Vec<[Scalar; 3]>,
     ) -> Self {
-        Self {
-            block: ElementBlock::new(
-                [bulk_modulus, shear_modulus],
-                connectivity,
-                ReferenceNodalCoordinatesBlock::new(&reference_nodal_coordinates),
-            ),
-        }
+        // Self {
+        //     block: ElementBlock::new(
+        //         [bulk_modulus, shear_modulus],
+        //         connectivity,
+        //         ReferenceNodalCoordinatesBlock::from(reference_nodal_coordinates),
+        //     ),
+        // }
+        todo!()
     }
     fn nodal_forces<'py>(
         &self,
@@ -100,7 +101,7 @@ impl AlmansiHamel {
     ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
         let forces: Vec<Vec<Scalar>> = self
             .block
-            .nodal_forces(&NodalCoordinatesBlock::new(&nodal_coordinates))?
+            .nodal_forces(&NodalCoordinatesBlock::from(nodal_coordinates))?
             .into();
         Ok(PyArray2::from_vec2(py, &forces)?)
     }
@@ -115,7 +116,7 @@ impl AlmansiHamel {
             Array::from_shape_vec(
                 (nodes, nodes, 3, 3),
                 self.block
-                    .nodal_stiffnesses(&NodalCoordinatesBlock::new(&nodal_coordinates))?
+                    .nodal_stiffnesses(&NodalCoordinatesBlock::from(nodal_coordinates))?
                     .into(),
             )?,
         ))
