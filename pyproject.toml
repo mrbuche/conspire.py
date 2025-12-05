@@ -4,8 +4,7 @@ requires = ["maturin>=1.0,<2.0"]
 
 [project]
 authors = [
-  {email = "mrbuche@sandia.gov"},
-  {name = "Michael R. Buche"},
+  {name = "Michael R. Buche", email = "mrbuche@sandia.gov"},
 ]
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
@@ -19,6 +18,7 @@ description = "The Python interface to conspire."
 dependencies = ["numpy"]
 dynamic = ["version"]
 name = "conspire"
+readme = "README.md"
 requires-python = ">=3.10"
 
 [project.optional-dependencies]
