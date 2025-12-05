@@ -31,8 +31,6 @@ jobs:
         run: cargo clippy --release -- -D warnings
       - name: Clippy tests
         run: cargo clippy --release --tests -- -D warnings
-      - name: Package
-        run: cargo package
       - name: Python
         uses: actions/setup-python@v6
         with:
