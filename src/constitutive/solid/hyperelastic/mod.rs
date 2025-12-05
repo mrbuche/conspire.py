@@ -24,11 +24,10 @@ pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
 }
 
 macro_rules! hyperelastic {
-    ($model: ident, $name: literal, $($parameter: ident),+ $(,)?) => {
-        use crate::{PyErrGlue, count_tts, replace_expr, constitutive::solid::elastic::shared};
+    ($model: ident, $($parameter: ident),+ $(,)?) => {
+        use crate::{PyErrGlue, constitutive::solid::elastic::shared};
         use conspire::{
             constitutive::{
-                Constitutive,
                 solid::{Solid, elastic::Elastic, hyperelastic::{Hyperelastic, $model as Inner}},
             },
             mechanics::Scalar,
@@ -36,20 +35,22 @@ macro_rules! hyperelastic {
         use ndarray::Array;
         use numpy::{PyArray2, PyArray4};
         use pyo3::prelude::*;
-        shared!($model, $name, $($parameter),+);
+        shared!($model, $($parameter),+);
         #[pymethods]
         impl $model {
             #[new]
             fn new($($parameter: Scalar),+) -> Self {
-                Self {
-                    model: Inner::new([$($parameter),+]),
-                }
+                Self (
+                    Inner {
+                        $($parameter),+
+                    }
+                )
             }
             $(
                 /// @private
                 #[getter]
-                pub fn $parameter(&self) -> &Scalar {
-                    self.model.$parameter()
+                pub fn $parameter(&self) -> Scalar {
+                    self.0.$parameter()
                 }
             )+
             #[doc = include_str!("helmholtz_free_energy_density.md")]
@@ -58,7 +59,7 @@ macro_rules! hyperelastic {
                 deformation_gradient: Vec<Vec<Scalar>>,
             ) -> Result<Scalar, PyErrGlue> {
                 Ok(self
-                    .model
+                    .0
                     .helmholtz_free_energy_density(&deformation_gradient.into())?)
             }
             #[doc = include_str!("cauchy_stress.md")]
@@ -68,7 +69,7 @@ macro_rules! hyperelastic {
                 deformation_gradient: Vec<Vec<Scalar>>,
             ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
                 let cauchy_stress: Vec<Vec<Scalar>> = self
-                    .model
+                    .0
                     .cauchy_stress(&deformation_gradient.into())?
                     .into();
                 Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
@@ -83,7 +84,7 @@ macro_rules! hyperelastic {
                     py,
                     &Array::from_shape_vec(
                         (3, 3, 3, 3),
-                        self.model
+                        self.0
                             .cauchy_tangent_stiffness(
                                 &deformation_gradient.into()
                             )?.into()
@@ -97,7 +98,7 @@ macro_rules! hyperelastic {
                 deformation_gradient: Vec<Vec<Scalar>>,
             ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
                 let cauchy_stress: Vec<Vec<Scalar>> = self
-                    .model
+                    .0
                     .first_piola_kirchhoff_stress(&deformation_gradient.into())?
                     .into();
                 Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
@@ -112,7 +113,7 @@ macro_rules! hyperelastic {
                     py,
                     &Array::from_shape_vec(
                         (3, 3, 3, 3),
-                        self.model
+                        self.0
                             .first_piola_kirchhoff_tangent_stiffness(
                                 &deformation_gradient.into()
                             )?.into()
@@ -126,7 +127,7 @@ macro_rules! hyperelastic {
                 deformation_gradient: Vec<Vec<Scalar>>,
             ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
                 let cauchy_stress: Vec<Vec<Scalar>> = self
-                    .model
+                    .0
                     .second_piola_kirchhoff_stress(&deformation_gradient.into())?
                     .into();
                 Ok(PyArray2::from_vec2(py, &cauchy_stress)?)
@@ -141,7 +142,7 @@ macro_rules! hyperelastic {
                     py,
                     &Array::from_shape_vec(
                         (3, 3, 3, 3),
-                        self.model
+                        self.0
                             .second_piola_kirchhoff_tangent_stiffness(
                                 &deformation_gradient.into()
                             )?.into()

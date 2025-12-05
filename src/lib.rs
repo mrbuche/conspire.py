@@ -2,7 +2,10 @@ mod constitutive;
 mod fem;
 mod math;
 
-use ::conspire::{constitutive::ConstitutiveError, fem::FiniteElementBlockError};
+use ::conspire::{
+    constitutive::ConstitutiveError, fem::FiniteElementBlockError,
+    math::integrate::IntegrationError,
+};
 use ndarray::ShapeError;
 use numpy::FromVecError;
 use pyo3::{exceptions::PyTypeError, prelude::*};
@@ -24,7 +27,7 @@ fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     let submodule_fem = PyModule::new(py, "fem")?;
     submodule_math.setattr(
         "__doc__",
-        "Mathematics library.\n\n - [special](math/special.html) - Special functions.",
+        "Mathematics library.\n\n - [integrate](math/integrate.html) - Integration and ODEs.\n - [special](math/special.html) - Special functions.",
     )?;
     submodule_constitutive.setattr(
         "__doc__",
@@ -74,6 +77,14 @@ impl From<ConstitutiveError> for PyErrGlue {
     }
 }
 
+impl From<IntegrationError> for PyErrGlue {
+    fn from(error: IntegrationError) -> Self {
+        PyErrGlue {
+            message: format!("{error:?}\x1B[A"),
+        }
+    }
+}
+
 impl From<FiniteElementBlockError> for PyErrGlue {
     fn from(error: FiniteElementBlockError) -> Self {
         PyErrGlue {
@@ -98,14 +109,14 @@ impl From<FromVecError> for PyErrGlue {
     }
 }
 
-macro_rules! replace_expr {
-    ($_t:tt $sub:expr) => {
-        $sub
-    };
-}
-pub(crate) use replace_expr;
+// macro_rules! replace_expr {
+//     ($_t:tt $sub:expr) => {
+//         $sub
+//     };
+// }
+// pub(crate) use replace_expr;
 
-macro_rules! count_tts {
-    ($($tts:tt)*) => {0usize $(+ replace_expr!($tts 1usize))*};
-}
-pub(crate) use count_tts;
+// macro_rules! count_tts {
+//     ($($tts:tt)*) => {0usize $(+ replace_expr!($tts 1usize))*};
+// }
+// pub(crate) use count_tts;

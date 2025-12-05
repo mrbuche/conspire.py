@@ -1,1 +1,1 @@
-super::elastic!(AlmansiHamel, "AlmansiHamel", bulk_modulus, shear_modulus,);
+super::elastic!(AlmansiHamel, bulk_modulus, shear_modulus,);

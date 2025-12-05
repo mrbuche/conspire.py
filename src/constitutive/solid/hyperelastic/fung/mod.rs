@@ -1,8 +1,1 @@
-super::hyperelastic!(
-    Fung,
-    "Fung",
-    bulk_modulus,
-    shear_modulus,
-    extra_modulus,
-    exponent,
-);
+super::hyperelastic!(Fung, bulk_modulus, shear_modulus, extra_modulus, exponent,);
