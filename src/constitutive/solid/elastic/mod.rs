@@ -59,7 +59,7 @@ macro_rules! elastic {
             fn cauchy_stress<'py>(
                 &self,
                 py: Python<'py>,
-                deformation_gradient: Vec<Vec<Scalar>>,
+                deformation_gradient: [[Scalar; 3]; 3],
             ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
                 let cauchy_stress: Vec<Vec<Scalar>> = self
                     .0
@@ -71,11 +71,11 @@ macro_rules! elastic {
             fn cauchy_tangent_stiffness<'py>(
                 &self,
                 py: Python<'py>,
-                deformation_gradient: Vec<Vec<Scalar>>,
+                deformation_gradient: [[Scalar; 3]; 3],
             ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
-                Ok(PyArray4::from_array(
+                Ok(PyArray4::from_owned_array(
                     py,
-                    &Array::from_shape_vec(
+                    Array::from_shape_vec(
                         (3, 3, 3, 3),
                         self.0
                             .cauchy_tangent_stiffness(
@@ -88,7 +88,7 @@ macro_rules! elastic {
             fn first_piola_kirchhoff_stress<'py>(
                 &self,
                 py: Python<'py>,
-                deformation_gradient: Vec<Vec<Scalar>>,
+                deformation_gradient: [[Scalar; 3]; 3],
             ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
                 let cauchy_stress: Vec<Vec<Scalar>> = self
                     .0
@@ -100,11 +100,11 @@ macro_rules! elastic {
             fn first_piola_kirchhoff_tangent_stiffness<'py>(
                 &self,
                 py: Python<'py>,
-                deformation_gradient: Vec<Vec<Scalar>>,
+                deformation_gradient: [[Scalar; 3]; 3],
             ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
-                Ok(PyArray4::from_array(
+                Ok(PyArray4::from_owned_array(
                     py,
-                    &Array::from_shape_vec(
+                    Array::from_shape_vec(
                         (3, 3, 3, 3),
                         self.0
                             .first_piola_kirchhoff_tangent_stiffness(
@@ -117,7 +117,7 @@ macro_rules! elastic {
             fn second_piola_kirchhoff_stress<'py>(
                 &self,
                 py: Python<'py>,
-                deformation_gradient: Vec<Vec<Scalar>>,
+                deformation_gradient: [[Scalar; 3]; 3],
             ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
                 let cauchy_stress: Vec<Vec<Scalar>> = self
                     .0
@@ -129,11 +129,11 @@ macro_rules! elastic {
             fn second_piola_kirchhoff_tangent_stiffness<'py>(
                 &self,
                 py: Python<'py>,
-                deformation_gradient: Vec<Vec<Scalar>>,
+                deformation_gradient: [[Scalar; 3]; 3],
             ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
-                Ok(PyArray4::from_array(
+                Ok(PyArray4::from_owned_array(
                     py,
-                    &Array::from_shape_vec(
+                    Array::from_shape_vec(
                         (3, 3, 3, 3),
                         self.0
                             .second_piola_kirchhoff_tangent_stiffness(

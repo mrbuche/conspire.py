@@ -1,7 +1,15 @@
 mod integrate;
 mod special;
 
-use pyo3::prelude::*;
+use pyo3::{PyClass, prelude::*};
+
+use conspire::math::TensorRank2;
+
+struct Foo<const D: usize, const I: usize, const J: usize>(TensorRank2<D, I, J>);
+
+// impl<const D: usize, const I: usize, const J: usize> PyClass for Foo<D, I, J> {
+
+// }
 
 pub fn register_module(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     let submodule_integrate = PyModule::new(py, "integrate")?;
