@@ -3,10 +3,12 @@ mod block;
 use crate::PyErrGlue;
 use crate::constitutive::solid::{
     elastic::AlmansiHamel,
-    hyperelastic::{ArrudaBoyce, Fung, Gent, MooneyRivlin, NeoHookean, SaintVenantKirchhoff},
+    hyperelastic::{
+        ArrudaBoyce, Fung, Gent, Hencky, MooneyRivlin, NeoHookean, SaintVenantKirchhoff,
+    },
 };
 use block::{elastic::ElasticBlock, hyperelastic::HyperelasticBlock};
-use conspire::{fem::Connectivity, mechanics::Scalar};
+use conspire::{fem::block::Connectivity, mechanics::Scalar};
 use numpy::{PyArray2, PyArray4};
 use pyo3::prelude::*;
 
@@ -37,6 +39,7 @@ enum Model {
     AlmansiHamel(Py<AlmansiHamel>),
     ArrudaBoyce(Py<ArrudaBoyce>),
     Gent(Py<Gent>),
+    Hencky(Py<Hencky>),
     Fung(Py<Fung>),
     MooneyRivlin(Py<MooneyRivlin>),
     NeoHookean(Py<NeoHookean>),
@@ -116,6 +119,17 @@ impl Block {
                 bulk_modulus,
                 shear_modulus,
                 extensibility,
+            ),
+            Model::Hencky(model) => block_inner!(
+                py,
+                model,
+                hyperelastic,
+                HyperelasticBlock,
+                Hencky,
+                connectivity,
+                reference_nodal_coordinates,
+                bulk_modulus,
+                shear_modulus,
             ),
             Model::MooneyRivlin(model) => block_inner!(
                 py,

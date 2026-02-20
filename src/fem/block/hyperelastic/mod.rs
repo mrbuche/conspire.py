@@ -1,9 +1,21 @@
-use crate::{PyErrGlue, constitutive::solid::hyperelastic as constitutive, fem::call_method};
+use crate::{
+    PyErrGlue,
+    constitutive::solid::hyperelastic as constitutive,
+    fem::{
+        block::elastic::{G, M, N, P},
+        call_method,
+    },
+};
 use conspire::{
     fem::{
-        Connectivity, ElasticFiniteElementBlock, ElementBlock, FiniteElementBlock,
-        HyperelasticFiniteElementBlock, LinearTetrahedron, NodalCoordinatesBlock,
-        ReferenceNodalCoordinatesBlock,
+        NodalCoordinates, NodalReferenceCoordinates,
+        block::{
+            Block, Connectivity,
+            element::linear::Tetrahedron as LinearTetrahedron,
+            solid::{
+                elastic::ElasticFiniteElementBlock, hyperelastic::HyperelasticFiniteElementBlock,
+            },
+        },
     },
     mechanics::Scalar,
 };
@@ -11,13 +23,12 @@ use ndarray::Array;
 use numpy::{PyArray2, PyArray4};
 use pyo3::prelude::*;
 
-const N: usize = 4;
-
 #[pyclass]
 pub enum HyperelasticBlock {
     ArrudaBoyce(Py<ArrudaBoyce>),
     Fung(Py<Fung>),
     Gent(Py<Gent>),
+    Hencky(Py<Hencky>),
     MooneyRivlin(Py<MooneyRivlin>),
     NeoHookean(Py<NeoHookean>),
     SaintVenantKirchhoff(Py<SaintVenantKirchhoff>),
@@ -28,6 +39,7 @@ enum HyperelasticModel<'py> {
     ArrudaBoyce(Bound<'py, constitutive::ArrudaBoyce>),
     Fung(Bound<'py, constitutive::Fung>),
     Gent(Bound<'py, constitutive::Gent>),
+    Hencky(Bound<'py, constitutive::Hencky>),
     MooneyRivlin(Bound<'py, constitutive::MooneyRivlin>),
     NeoHookean(Bound<'py, constitutive::NeoHookean>),
     SaintVenantKirchhoff(Bound<'py, constitutive::SaintVenantKirchhoff>),
@@ -39,6 +51,7 @@ macro_rules! match_model {
             Self::ArrudaBoyce(model) => call_method!(model, $py, $name, $nodal_coordinates),
             Self::Fung(model) => call_method!(model, $py, $name, $nodal_coordinates),
             Self::Gent(model) => call_method!(model, $py, $name, $nodal_coordinates),
+            Self::Hencky(model) => call_method!(model, $py, $name, $nodal_coordinates),
             Self::MooneyRivlin(model) => call_method!(model, $py, $name, $nodal_coordinates),
             Self::NeoHookean(model) => call_method!(model, $py, $name, $nodal_coordinates),
             Self::SaintVenantKirchhoff(model) => {
@@ -86,6 +99,8 @@ impl HyperelasticBlock {
             [bulk_modulus, shear_modulus, extra_modulus, exponent],
             Gent,
             [bulk_modulus, shear_modulus, extensibility],
+            Hencky,
+            [bulk_modulus, shear_modulus],
             MooneyRivlin,
             [bulk_modulus, shear_modulus, extra_modulus],
             NeoHookean,
@@ -121,7 +136,7 @@ macro_rules! hyperelastic {
     ($element: ident, $n: literal, $model: ident, $($parameter: ident),+ $(,)?) => {
         #[pyclass]
         pub struct $model {
-            block: ElementBlock<conspire::constitutive::solid::hyperelastic::$model, $element, $n>,
+            block: Block<conspire::constitutive::solid::hyperelastic::$model, $element, G, M, $n, P>,
         }
         #[pymethods]
         impl $model {
@@ -132,13 +147,13 @@ macro_rules! hyperelastic {
                 reference_nodal_coordinates: Vec<[Scalar; 3]>,
             ) -> Self {
                 Self {
-                    block: ElementBlock::new(
+                    block: Block::from((
                         conspire::constitutive::solid::hyperelastic::$model {
                             $($parameter),+
                         },
                         connectivity,
-                        ReferenceNodalCoordinatesBlock::from(reference_nodal_coordinates),
-                    ),
+                        NodalReferenceCoordinates::from(reference_nodal_coordinates),
+                    )),
                 }
             }
             fn helmholtz_free_energy(
@@ -147,7 +162,7 @@ macro_rules! hyperelastic {
             ) -> Result<Scalar, PyErrGlue> {
                 Ok(self
                     .block
-                    .helmholtz_free_energy(&NodalCoordinatesBlock::from(nodal_coordinates))?)
+                    .helmholtz_free_energy(&NodalCoordinates::from(nodal_coordinates))?)
             }
             fn nodal_forces<'py>(
                 &self,
@@ -156,7 +171,7 @@ macro_rules! hyperelastic {
             ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
                 let forces: Vec<Vec<Scalar>> = self
                     .block
-                    .nodal_forces(&NodalCoordinatesBlock::from(nodal_coordinates))?
+                    .nodal_forces(&NodalCoordinates::from(nodal_coordinates))?
                     .into();
                 Ok(PyArray2::from_vec2(py, &forces)?)
             }
@@ -171,7 +186,7 @@ macro_rules! hyperelastic {
                     Array::from_shape_vec(
                         (nodes, nodes, 3, 3),
                         self.block
-                            .nodal_stiffnesses(&NodalCoordinatesBlock::from(nodal_coordinates))?
+                            .nodal_stiffnesses(&NodalCoordinates::from(nodal_coordinates))?
                             .into(),
                     )?,
                 ))
@@ -205,6 +220,7 @@ hyperelastic!(
     shear_modulus,
     extensibility,
 );
+hyperelastic!(LinearTetrahedron, 4, Hencky, bulk_modulus, shear_modulus,);
 hyperelastic!(
     LinearTetrahedron,
     4,

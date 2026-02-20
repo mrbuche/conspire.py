@@ -3,7 +3,7 @@ mod fem;
 mod math;
 
 use ::conspire::{
-    constitutive::ConstitutiveError, fem::FiniteElementBlockError,
+    constitutive::ConstitutiveError, fem::block::FiniteElementBlockError,
     math::integrate::IntegrationError,
 };
 use ndarray::ShapeError;
