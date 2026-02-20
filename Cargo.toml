@@ -8,10 +8,10 @@ version = "0.4.1"
 crate-type = ["cdylib"]
 
 [build-dependencies]
-conspire = { version = "=0.5.12", features = ["doc", "fem"] }
+conspire = { version = "=0.5.14", features = ["doc", "fem"] }
 
 [dependencies]
-conspire = { version = "=0.5.12", features = ["doc", "fem"] }
+conspire = { version = "=0.5.14", features = ["doc", "fem"] }
 ndarray = { version = "=0.17.2" }
 numpy = { version = "=0.27.1" }
 pyo3 = { features = ["extension-module"], version = "=0.27.2" }
