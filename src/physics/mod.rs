@@ -54,6 +54,18 @@ macro_rules! single_chain {
                     ensemble,
                 })
             }
+            /// @private
+            #[getter]
+            pub fn number_of_links(&self) -> u8 {
+                self.0.number_of_links
+            }
+            $(
+                /// @private
+                #[getter]
+                pub fn $parameter(&self) -> Scalar {
+                    self.0.$parameter
+                }
+            )+
             fn nondimensional_helmholtz_free_energy(
                 &self,
                 nondimensional_extension: Scalar,
