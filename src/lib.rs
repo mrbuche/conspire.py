@@ -1,6 +1,7 @@
 mod constitutive;
 mod fem;
 mod math;
+mod physics;
 
 use ::conspire::{
     constitutive::ConstitutiveError, fem::block::FiniteElementBlockError,
@@ -23,6 +24,7 @@ use pyo3::{exceptions::PyTypeError, prelude::*};
 #[pymodule]
 fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     let submodule_math = PyModule::new(py, "math")?;
+    let submodule_physics = PyModule::new(py, "physics")?;
     let submodule_constitutive = PyModule::new(py, "constitutive")?;
     let submodule_fem = PyModule::new(py, "fem")?;
     submodule_math.setattr(
@@ -35,14 +37,19 @@ fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     )?;
     submodule_fem.setattr("__doc__", "Finite element library.")?;
     m.add_submodule(&submodule_math)?;
+    m.add_submodule(&submodule_physics)?;
     m.add_submodule(&submodule_constitutive)?;
     m.add_submodule(&submodule_fem)?;
     math::register_module(py, &submodule_math)?;
+    physics::register_module(py, &submodule_physics)?;
     constitutive::register_module(py, &submodule_constitutive)?;
     fem::register_module(&submodule_fem)?;
     py.import("sys")?
         .getattr("modules")?
         .set_item("conspire.math", submodule_math)?;
+    py.import("sys")?
+        .getattr("modules")?
+        .set_item("conspire.physics", submodule_physics)?;
     py.import("sys")?
         .getattr("modules")?
         .set_item("conspire.constitutive", submodule_constitutive)?;

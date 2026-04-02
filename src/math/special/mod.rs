@@ -5,7 +5,8 @@ pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(lambert_w, m)?)?;
     m.add_function(wrap_pyfunction!(langevin, m)?)?;
     m.add_function(wrap_pyfunction!(inverse_langevin, m)?)?;
-    m.add_function(wrap_pyfunction!(rosenbrock, m)?)
+    m.add_function(wrap_pyfunction!(rosenbrock, m)?)?;
+    m.add_function(wrap_pyfunction!(sinhc, m)?)
 }
 
 /// Returns the Lambert W function.
@@ -46,4 +47,14 @@ pub fn inverse_langevin(y: f64) -> f64 {
 #[pyfunction]
 pub fn rosenbrock(x: Vec<f64>, a: f64, b: f64) -> f64 {
     special::rosenbrock(&Vector::from(x), a, b)
+}
+
+/// Returns the hyperbolic sinc function.
+///
+/// $$
+/// \mathrm{sinhc}(x) = \frac{\sinh(x)}{x}
+/// $$
+#[pyfunction]
+pub fn sinhc(x: f64) -> f64 {
+    special::sinhc(x)
 }
