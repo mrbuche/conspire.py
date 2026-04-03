@@ -4,6 +4,7 @@ use pyo3::prelude::*;
 pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(lambert_w, m)?)?;
     m.add_function(wrap_pyfunction!(langevin, m)?)?;
+    m.add_function(wrap_pyfunction!(langevin_derivative, m)?)?;
     m.add_function(wrap_pyfunction!(inverse_langevin, m)?)?;
     m.add_function(wrap_pyfunction!(rosenbrock, m)?)?;
     m.add_function(wrap_pyfunction!(sinhc, m)?)
@@ -27,6 +28,16 @@ pub fn lambert_w(x: f64) -> f64 {
 #[pyfunction]
 pub fn langevin(x: f64) -> f64 {
     special::langevin(x)
+}
+
+/// Returns the derivative of the Langevin function.
+///
+/// $$
+/// \mathcal{L}'(x) = x^{-2} - \sinh^{-2}(x)
+/// $$
+#[pyfunction]
+pub fn langevin_derivative(x: f64) -> f64 {
+    special::langevin_derivative(x)
 }
 
 /// Returns the inverse Langevin function.
