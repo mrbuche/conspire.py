@@ -4,21 +4,23 @@ use conspire::{
     physics::molecular::single_chain::{
         // ArbitraryPotentialFreelyJointedChain as Ufjc,
         Ensemble,
-        ExtensibleFreelyJointedChain as Efjc,
+        // ExtensibleFreelyJointedChain as Efjc,
         FreelyJointedChain as Fjc,
-        IdealChain as Ideal,
+        MonteCarloInextensible,
+        // IdealChain as Ideal,
         SingleChainError,
         SquareWellFreelyJointedChain as Swfjc,
         Thermodynamics,
     },
 };
+use numpy::PyArray1;
 use pyo3::prelude::*;
 
 pub fn register_module(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     // m.add_class::<ArbitraryPotentialFreelyJointedChain>()?;
-    m.add_class::<ExtensibleFreelyJointedChain>()?;
+    // m.add_class::<ExtensibleFreelyJointedChain>()?;
     m.add_class::<FreelyJointedChain>()?;
-    m.add_class::<IdealChain>()?;
+    // m.add_class::<IdealChain>()?;
     m.add_class::<SquareWellFreelyJointedChain>()
 }
 
@@ -95,9 +97,24 @@ macro_rules! single_chain {
                 &self,
                 nondimensional_extension: Scalar,
             ) -> Result<Scalar, PyErrGlue> {
-                Ok(self
-                    .0
-                    .nondimensional_radial_distribution(nondimensional_extension)?)
+                Ok(Thermodynamics::nondimensional_radial_distribution(&self.0, nondimensional_extension)?)
+            }
+            fn nondimensional_radial_distribution_monte_carlo<'py>(
+                &self,
+                py: Python<'py>,
+                nondimensional_force: Scalar,
+                num_bins: usize,
+                num_samples: usize,
+                num_threads: usize,
+            ) -> (Bound<'py, PyArray1<Scalar>>, Bound<'py, PyArray1<Scalar>>) {
+                let (g, p) = MonteCarloInextensible::nondimensional_radial_distribution(
+                    &self.0,
+                    nondimensional_force,
+                    num_bins,
+                    num_samples,
+                    num_threads,
+                );
+                (PyArray1::from_vec(py, Vec::from(g)), PyArray1::from_vec(py, Vec::from(p)))
             }
             fn nondimensional_spherical_distribution(
                 &self,
@@ -111,34 +128,30 @@ macro_rules! single_chain {
                 &self,
                 nondimensional_force: Scalar,
             ) -> Result<Scalar, PyErrGlue> {
-                Ok(self
-                    .0
-                    .nondimensional_gibbs_free_energy(nondimensional_force)?)
+                Ok(Thermodynamics::nondimensional_gibbs_free_energy(&self.0, nondimensional_force)?)
             }
             fn nondimensional_gibbs_free_energy_per_link(
                 &self,
                 nondimensional_force: Scalar,
             ) -> Result<Scalar, PyErrGlue> {
-                Ok(self
-                    .0
-                    .nondimensional_gibbs_free_energy_per_link(nondimensional_force)?)
+                Ok(Thermodynamics::nondimensional_gibbs_free_energy_per_link(&self.0, nondimensional_force)?)
             }
             fn nondimensional_extension(&self, nondimensional_force: Scalar) -> Result<Scalar, PyErrGlue> {
-                Ok(self.0.nondimensional_extension(nondimensional_force)?)
+                Ok(Thermodynamics::nondimensional_extension(&self.0, nondimensional_force)?)
             }
             fn nondimensional_compliance(&self, nondimensional_force: Scalar) -> Result<Scalar, PyErrGlue> {
-                Ok(self.0.nondimensional_compliance(nondimensional_force)?)
+                Ok(Thermodynamics::nondimensional_compliance(&self.0, nondimensional_force)?)
             }
         }
     };
 }
 
-single_chain!(
-    ExtensibleFreelyJointedChain,
-    Efjc,
-    link_length,
-    link_stiffness
-);
-single_chain!(IdealChain, Ideal, link_length);
+// single_chain!(
+//     ExtensibleFreelyJointedChain,
+//     Efjc,
+//     link_length,
+//     link_stiffness
+// );
+// single_chain!(IdealChain, Ideal, link_length);
 single_chain!(FreelyJointedChain, Fjc, link_length);
 single_chain!(SquareWellFreelyJointedChain, Swfjc, link_length, well_width);
