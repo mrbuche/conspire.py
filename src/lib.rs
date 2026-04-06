@@ -19,6 +19,7 @@ use pyo3::{exceptions::PyTypeError, prelude::*};
 /// The Python interface to [conspire](https://mrbuche.github.io/conspire).
 /// <hr>
 /// - [math](conspire/math.html) - Mathematics library.
+/// - [physics](conspire/physics.html) - Physics library.
 /// - [constitutive](conspire/constitutive.html) - Constitutive model library.
 /// - [fem](conspire/fem.html) - Finite element library.
 #[pymodule]
@@ -30,6 +31,10 @@ fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     submodule_math.setattr(
         "__doc__",
         "Mathematics library.\n\n - [integrate](math/integrate.html) - Integration and ODEs.\n - [special](math/special.html) - Special functions.",
+    )?;
+    submodule_physics.setattr(
+        "__doc__",
+        "Physics library.\n\n - [molecular](physics/molecular.html) - Molecular physics models.",
     )?;
     submodule_constitutive.setattr(
         "__doc__",

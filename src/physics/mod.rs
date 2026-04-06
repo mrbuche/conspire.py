@@ -5,6 +5,10 @@ use pyo3::prelude::*;
 
 pub fn register_module(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     let submodule_molecular = PyModule::new(py, "molecular")?;
+    submodule_molecular.setattr(
+        "__doc__",
+        "Molecular physics models.\n\n - [single_chain](molecular/single_chain.html) - Single-chain models of polymer physics.",
+    )?;
     m.add_submodule(&submodule_molecular)?;
     molecular::register_module(py, &submodule_molecular)?;
     py.import("sys")?
