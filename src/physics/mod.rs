@@ -13,7 +13,7 @@ use conspire::{
         Thermodynamics,
     },
 };
-use numpy::PyArray1;
+use numpy::{FromVecError, PyArray1, PyArray2};
 use pyo3::prelude::*;
 
 pub fn register_module(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -98,6 +98,22 @@ macro_rules! single_chain {
                 nondimensional_extension: Scalar,
             ) -> Result<Scalar, PyErrGlue> {
                 Ok(Thermodynamics::nondimensional_radial_distribution(&self.0, nondimensional_extension)?)
+            }
+            fn cosine_powers_monte_carlo<'py>(
+                &self,
+                py: Python<'py>,
+                nondimensional_force: Scalar,
+                num_powers: usize,
+                num_samples: usize,
+                num_threads: usize,
+            ) -> Result<Bound<'py, PyArray2<Scalar>>, FromVecError> {
+                PyArray2::from_vec2(py, &Vec::from(MonteCarloInextensible::cosine_powers(
+                    &self.0,
+                    nondimensional_force,
+                    num_powers,
+                    num_samples,
+                    num_threads,
+                )))
             }
             fn nondimensional_angular_distribution_monte_carlo<'py>(
                 &self,
