@@ -16,7 +16,7 @@ use conspire::{
 use numpy::{FromVecError, PyArray1, PyArray2};
 use pyo3::prelude::*;
 
-pub fn register_module(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
+pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // m.add_class::<ArbitraryPotentialFreelyJointedChain>()?;
     // m.add_class::<ExtensibleFreelyJointedChain>()?;
     m.add_class::<FreelyJointedChain>()?;
