@@ -99,7 +99,7 @@ macro_rules! single_chain {
             ) -> Result<Scalar, PyErrGlue> {
                 Ok(Thermodynamics::nondimensional_radial_distribution(&self.0, nondimensional_extension)?)
             }
-            fn nondimensional_radial_distribution_monte_carlo<'py>(
+            fn nondimensional_angular_distribution_monte_carlo<'py>(
                 &self,
                 py: Python<'py>,
                 nondimensional_force: Scalar,
@@ -107,7 +107,7 @@ macro_rules! single_chain {
                 num_samples: usize,
                 num_threads: usize,
             ) -> (Bound<'py, PyArray1<Scalar>>, Bound<'py, PyArray1<Scalar>>) {
-                let (g, p) = MonteCarloInextensible::nondimensional_radial_distribution(
+                let (g, p) = MonteCarloInextensible::nondimensional_angular_distribution(
                     &self.0,
                     nondimensional_force,
                     num_bins,
@@ -125,6 +125,23 @@ macro_rules! single_chain {
                 num_threads: usize,
             ) -> (Bound<'py, PyArray1<Scalar>>, Bound<'py, PyArray1<Scalar>>) {
                 let (g, p) = MonteCarloInextensible::nondimensional_longitudinal_distribution(
+                    &self.0,
+                    nondimensional_force,
+                    num_bins,
+                    num_samples,
+                    num_threads,
+                );
+                (PyArray1::from_vec(py, Vec::from(g)), PyArray1::from_vec(py, Vec::from(p)))
+            }
+            fn nondimensional_radial_distribution_monte_carlo<'py>(
+                &self,
+                py: Python<'py>,
+                nondimensional_force: Scalar,
+                num_bins: usize,
+                num_samples: usize,
+                num_threads: usize,
+            ) -> (Bound<'py, PyArray1<Scalar>>, Bound<'py, PyArray1<Scalar>>) {
+                let (g, p) = MonteCarloInextensible::nondimensional_radial_distribution(
                     &self.0,
                     nondimensional_force,
                     num_bins,
