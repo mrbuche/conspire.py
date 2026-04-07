@@ -132,6 +132,23 @@ macro_rules! single_chain {
                 );
                 (PyArray1::from_vec(py, Vec::from(g)), PyArray1::from_vec(py, Vec::from(p)))
             }
+            fn nondimensional_lateral_distribution_monte_carlo<'py>(
+                &self,
+                py: Python<'py>,
+                nondimensional_force: Scalar,
+                num_bins: usize,
+                num_samples: usize,
+                num_threads: usize,
+            ) -> (Bound<'py, PyArray1<Scalar>>, Bound<'py, PyArray1<Scalar>>) {
+                let (g, p) = MonteCarloInextensible::nondimensional_lateral_distribution(
+                    &self.0,
+                    nondimensional_force,
+                    num_bins,
+                    num_samples,
+                    num_threads,
+                );
+                (PyArray1::from_vec(py, Vec::from(g)), PyArray1::from_vec(py, Vec::from(p)))
+            }
             fn nondimensional_longitudinal_distribution_monte_carlo<'py>(
                 &self,
                 py: Python<'py>,
