@@ -1,6 +1,7 @@
 mod constitutive;
 mod fem;
 mod math;
+mod physics;
 
 use ::conspire::{
     constitutive::ConstitutiveError, fem::block::FiniteElementBlockError,
@@ -18,16 +19,22 @@ use pyo3::{exceptions::PyTypeError, prelude::*};
 /// The Python interface to [conspire](https://mrbuche.github.io/conspire).
 /// <hr>
 /// - [math](conspire/math.html) - Mathematics library.
+/// - [physics](conspire/physics.html) - Physics library.
 /// - [constitutive](conspire/constitutive.html) - Constitutive model library.
 /// - [fem](conspire/fem.html) - Finite element library.
 #[pymodule]
 fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     let submodule_math = PyModule::new(py, "math")?;
+    let submodule_physics = PyModule::new(py, "physics")?;
     let submodule_constitutive = PyModule::new(py, "constitutive")?;
     let submodule_fem = PyModule::new(py, "fem")?;
     submodule_math.setattr(
         "__doc__",
         "Mathematics library.\n\n - [integrate](math/integrate.html) - Integration and ODEs.\n - [special](math/special.html) - Special functions.",
+    )?;
+    submodule_physics.setattr(
+        "__doc__",
+        "Physics library.\n\n - [molecular](physics/molecular.html) - Molecular physics models.",
     )?;
     submodule_constitutive.setattr(
         "__doc__",
@@ -35,14 +42,19 @@ fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     )?;
     submodule_fem.setattr("__doc__", "Finite element library.")?;
     m.add_submodule(&submodule_math)?;
+    m.add_submodule(&submodule_physics)?;
     m.add_submodule(&submodule_constitutive)?;
     m.add_submodule(&submodule_fem)?;
     math::register_module(py, &submodule_math)?;
+    physics::register_module(py, &submodule_physics)?;
     constitutive::register_module(py, &submodule_constitutive)?;
     fem::register_module(&submodule_fem)?;
     py.import("sys")?
         .getattr("modules")?
         .set_item("conspire.math", submodule_math)?;
+    py.import("sys")?
+        .getattr("modules")?
+        .set_item("conspire.physics", submodule_physics)?;
     py.import("sys")?
         .getattr("modules")?
         .set_item("conspire.constitutive", submodule_constitutive)?;
