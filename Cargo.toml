@@ -8,10 +8,12 @@ version = "0.6.1"
 crate-type = ["cdylib"]
 
 [build-dependencies]
-conspire = { version = "=0.6.0", features = ["doc", "fem"] }
+# conspire = { version = "=0.6.0", features = ["doc", "fem"] }
+conspire = { git = "https://github.com/mrbuche/conspire.rs.git", branch = "physics-ufjc", features = ["doc", "fem"] }
 
 [dependencies]
-conspire = { version = "=0.6.0", features = ["doc", "fem"] }
+# conspire = { version = "=0.6.0", features = ["doc", "fem"] }
+conspire = { git = "https://github.com/mrbuche/conspire.rs.git", branch = "physics-ufjc", features = ["doc", "fem"] }
 ndarray = { version = "=0.17.2" }
 numpy = { version = "=0.27.1" }
 pyo3 = { features = ["extension-module"], version = "=0.27.2" }
