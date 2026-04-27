@@ -21,7 +21,7 @@ dependencies = [
 [[package]]
 name = "conspire"
 version = "0.6.1"
-source = "git+https://github.com/mrbuche/conspire.rs.git?branch=physics-ufjc#a7b1f31468a028a49bdc3b662ce00f9a7ed164d4"
+source = "git+https://github.com/mrbuche/conspire.rs.git?branch=physics-ufjc#95462efe0c15667bd9638f46985dfb0cbd3c738c"
 
 [[package]]
 name = "heck"
