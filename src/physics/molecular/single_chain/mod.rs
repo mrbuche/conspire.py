@@ -323,10 +323,12 @@ impl ExtensibleFreelyJointedChain {
         &self,
         nondimensional_value: Scalar,
     ) -> Result<Scalar, PyErrGlue> {
-        Ok(ThermodynamicsExtensible::nondimensional_link_energy_average(
-            &self.0,
-            nondimensional_value,
-        )?)
+        Ok(
+            ThermodynamicsExtensible::nondimensional_link_energy_average(
+                &self.0,
+                nondimensional_value,
+            )?,
+        )
     }
     fn nondimensional_link_energy_variance(
         &self,
@@ -335,6 +337,19 @@ impl ExtensibleFreelyJointedChain {
         Ok(
             ThermodynamicsExtensible::nondimensional_link_energy_variance(
                 &self.0,
+                nondimensional_value,
+            )?,
+        )
+    }
+    fn nondimensional_link_length_probability(
+        &self,
+        nondimensional_length: Scalar,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(
+            ThermodynamicsExtensible::nondimensional_link_length_probability(
+                &self.0,
+                nondimensional_length,
                 nondimensional_value,
             )?,
         )
@@ -395,17 +410,19 @@ impl ArbitraryPotentialFreelyJointedChain {
             Potential::Harmonic {
                 rest_length,
                 stiffness,
-            } => Ok(ThermodynamicsExtensible::nondimensional_link_energy_average(
-                &Ufjc {
-                    number_of_links: self.number_of_links,
-                    link_potential: Harmonic {
-                        rest_length,
-                        stiffness,
+            } => Ok(
+                ThermodynamicsExtensible::nondimensional_link_energy_average(
+                    &Ufjc {
+                        number_of_links: self.number_of_links,
+                        link_potential: Harmonic {
+                            rest_length,
+                            stiffness,
+                        },
+                        ensemble: self.ensemble,
                     },
-                    ensemble: self.ensemble,
-                },
-                nondimensional_value,
-            )?),
+                    nondimensional_value,
+                )?,
+            ),
         }
     }
     fn nondimensional_link_energy_variance(
@@ -416,17 +433,44 @@ impl ArbitraryPotentialFreelyJointedChain {
             Potential::Harmonic {
                 rest_length,
                 stiffness,
-            } => Ok(ThermodynamicsExtensible::nondimensional_link_energy_variance(
-                &Ufjc {
-                    number_of_links: self.number_of_links,
-                    link_potential: Harmonic {
-                        rest_length,
-                        stiffness,
+            } => Ok(
+                ThermodynamicsExtensible::nondimensional_link_energy_variance(
+                    &Ufjc {
+                        number_of_links: self.number_of_links,
+                        link_potential: Harmonic {
+                            rest_length,
+                            stiffness,
+                        },
+                        ensemble: self.ensemble,
                     },
-                    ensemble: self.ensemble,
-                },
-                nondimensional_value,
-            )?),
+                    nondimensional_value,
+                )?,
+            ),
+        }
+    }
+    fn nondimensional_link_length_probability(
+        &self,
+        nondimensional_link_length: Scalar,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        match self.potential.clone() {
+            Potential::Harmonic {
+                rest_length,
+                stiffness,
+            } => Ok(
+                ThermodynamicsExtensible::nondimensional_link_length_probability(
+                    &Ufjc {
+                        number_of_links: self.number_of_links,
+                        link_potential: Harmonic {
+                            rest_length,
+                            stiffness,
+                        },
+                        ensemble: self.ensemble,
+                    },
+                    nondimensional_link_length,
+                    nondimensional_value,
+                )?,
+            ),
         }
     }
 }
