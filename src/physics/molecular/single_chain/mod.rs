@@ -341,6 +341,41 @@ impl ExtensibleFreelyJointedChain {
             )?,
         )
     }
+    fn nondimensional_link_energy_probability(
+        &self,
+        nondimensional_energy: Scalar,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(
+            ThermodynamicsExtensible::nondimensional_link_energy_probability(
+                &self.0,
+                nondimensional_energy,
+                nondimensional_value,
+            )?,
+        )
+    }
+    fn nondimensional_link_length_average(
+        &self,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(
+            ThermodynamicsExtensible::nondimensional_link_length_average(
+                &self.0,
+                nondimensional_value,
+            )?,
+        )
+    }
+    fn nondimensional_link_length_variance(
+        &self,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(
+            ThermodynamicsExtensible::nondimensional_link_length_variance(
+                &self.0,
+                nondimensional_value,
+            )?,
+        )
+    }
     fn nondimensional_link_length_probability(
         &self,
         nondimensional_length: Scalar,
@@ -435,6 +470,77 @@ impl ArbitraryPotentialFreelyJointedChain {
                 stiffness,
             } => Ok(
                 ThermodynamicsExtensible::nondimensional_link_energy_variance(
+                    &Ufjc {
+                        number_of_links: self.number_of_links,
+                        link_potential: Harmonic {
+                            rest_length,
+                            stiffness,
+                        },
+                        ensemble: self.ensemble,
+                    },
+                    nondimensional_value,
+                )?,
+            ),
+        }
+    }
+    fn nondimensional_link_energy_probability(
+        &self,
+        nondimensional_link_energy: Scalar,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        match self.potential.clone() {
+            Potential::Harmonic {
+                rest_length,
+                stiffness,
+            } => Ok(
+                ThermodynamicsExtensible::nondimensional_link_energy_probability(
+                    &Ufjc {
+                        number_of_links: self.number_of_links,
+                        link_potential: Harmonic {
+                            rest_length,
+                            stiffness,
+                        },
+                        ensemble: self.ensemble,
+                    },
+                    nondimensional_link_energy,
+                    nondimensional_value,
+                )?,
+            ),
+        }
+    }
+    fn nondimensional_link_length_average(
+        &self,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        match self.potential.clone() {
+            Potential::Harmonic {
+                rest_length,
+                stiffness,
+            } => Ok(
+                ThermodynamicsExtensible::nondimensional_link_length_average(
+                    &Ufjc {
+                        number_of_links: self.number_of_links,
+                        link_potential: Harmonic {
+                            rest_length,
+                            stiffness,
+                        },
+                        ensemble: self.ensemble,
+                    },
+                    nondimensional_value,
+                )?,
+            ),
+        }
+    }
+    fn nondimensional_link_length_variance(
+        &self,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        match self.potential.clone() {
+            Potential::Harmonic {
+                rest_length,
+                stiffness,
+            } => Ok(
+                ThermodynamicsExtensible::nondimensional_link_length_variance(
                     &Ufjc {
                         number_of_links: self.number_of_links,
                         link_potential: Harmonic {
