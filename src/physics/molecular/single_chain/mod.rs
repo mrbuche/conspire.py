@@ -319,6 +319,38 @@ impl ExtensibleFreelyJointedChain {
             nondimensional_extension,
         )?)
     }
+    fn nondimensional_spherical_distribution(
+        &self,
+        nondimensional_extension: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(self
+            .0
+            .nondimensional_spherical_distribution(nondimensional_extension)?)
+    }
+    fn nondimensional_gibbs_free_energy(
+        &self,
+        nondimensional_force: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(Thermodynamics::nondimensional_gibbs_free_energy(
+            &self.0,
+            nondimensional_force,
+        )?)
+    }
+    fn nondimensional_gibbs_free_energy_per_link(
+        &self,
+        nondimensional_force: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(Thermodynamics::nondimensional_gibbs_free_energy_per_link(
+            &self.0,
+            nondimensional_force,
+        )?)
+    }
+    fn nondimensional_extension(&self, nondimensional_force: Scalar) -> Result<Scalar, PyErrGlue> {
+        Ok(Thermodynamics::nondimensional_extension(
+            &self.0,
+            nondimensional_force,
+        )?)
+    }
     fn nondimensional_link_energy_average(
         &self,
         nondimensional_value: Scalar,
