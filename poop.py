@@ -25,8 +25,8 @@ def baz(kappa, eta):
     return (1 / 2 + helper(kappa, eta) + eta**2 / kappa / 2) / kappa
 
 
-kappa = 0.1
-eta = np.linspace(1e-6, kappa, 5)
+kappa = 10
+eta = np.linspace(1e-6, 10 * kappa, 5)
 for i, eta_i in enumerate(eta):
     num = quad(lambda lam: bar(kappa, lam, eta_i), 0, np.inf)[0]
     den = quad(lambda lam: foo(kappa, lam, eta_i), 0, np.inf)[0]
@@ -77,23 +77,59 @@ from scipy.special import erf, erfc
 
 
 def foo_3(k, eta):
-    sqrt_term = np.pi * np.sqrt(2 * np.pi / kappa) * np.exp( eta**2 / (2 * k) ) / eta
-    term2 = np.exp(eta) * (eta / kappa + 1) * (1 + erf((eta + k) / (np.sqrt(2 * k))))
+    prefactor = np.pi * np.sqrt(2 * np.pi / kappa) * np.exp(eta**2 / (2 * k)) / eta
+    term2 = np.exp(+eta) * (eta / kappa + 1) * (1 + erf((eta + k) / (np.sqrt(2 * k))))
     term3 = np.exp(-eta) * (eta / kappa - 1) * (1 - erf((eta - k) / (np.sqrt(2 * k))))
-    return sqrt_term * (term2 + term3)
+    return prefactor * (term2 + term3)
 
 
 def baz_3(k, eta):
-    term2 = 4 / np.sqrt( 2 * np.pi * k ) * eta / kappa
-    term3 =  np.exp( eta**2/2/k + eta + k/2 ) * ( 1 / k + ( eta / k + 1 )** 2 ) * ( 1 + erf (( eta + k ) / np.sqrt( 2 * k )))
-    term4 = -np.exp( eta**2/2/k - eta + k/2 ) * ( 1 / k + ( eta / k - 1 )** 2 ) * ( 1 - erf (( eta - k ) / np.sqrt( 2 * k )))
-    return ( term2 + term3 + term4) * np.pi / ( np.exp( k / 2) * ( 2 * k ) ) / eta * np.sqrt( 2 * np.pi / kappa) * 2 * k
+    prefactor = np.pi * np.sqrt(2 * np.pi / kappa) * np.exp(eta**2 / (2 * k)) / eta
+    term2 = (
+        4
+        * np.exp(-(eta**2) / 2 / k)
+        * np.exp(-k / 2)
+        / np.sqrt(2 * np.pi * k)
+        * eta
+        / kappa
+    )
+    term3 = (
+        +np.exp(+eta)
+        * (1 / k + (eta / k + 1) ** 2)
+        * (1 + erf((eta + k) / np.sqrt(2 * k)))
+    )
+    term4 = (
+        -np.exp(-eta)
+        * (1 / k + (eta / k - 1) ** 2)
+        * (1 - erf((eta - k) / np.sqrt(2 * k)))
+    )
+    return prefactor * (term2 + term3 + term4)
+
+
+# def lambda_asmptotic(kappa, eta):
+#     foo = eta / kappa
+#     return (1 + 1/kappa + 2*foo / np.tanh(eta)) / (1 + foo / np.tanh(eta))
+
+
+def lambda_asmptotic(kappa, eta):
+    eta_over_kappa = eta / kappa
+    return (
+        1
+        + eta_over_kappa
+        + (1 / kappa + eta_over_kappa * (1 - eta_over_kappa)* (1 / np.tanh(eta) - 1))
+        / (1 + eta_over_kappa / np.tanh(eta))
+    )
 
 
 for i, eta_i in enumerate(eta):
     num = quad(lambda lam: bar_3(kappa, lam, eta_i), 0, np.inf)[0]
     den = quad(lambda lam: foo(kappa, lam, eta_i), 0, np.inf)[0]
-    print(eta_i, num / den, baz_3(kappa, eta_i) / foo_3(kappa, eta_i))
+    print(
+        eta_i,
+        num / den,
+        baz_3(kappa, eta_i) / foo_3(kappa, eta_i),
+        lambda_asmptotic(kappa, eta_i),
+    )
 
 
 # def p(kappa, lam, eta):
