@@ -25,7 +25,7 @@ def baz(kappa, eta):
     return (1 / 2 + helper(kappa, eta) + eta**2 / kappa / 2) / kappa
 
 
-kappa = 10
+kappa = 0.1
 eta = np.linspace(1e-6, kappa, 5)
 for i, eta_i in enumerate(eta):
     num = quad(lambda lam: bar(kappa, lam, eta_i), 0, np.inf)[0]
@@ -76,25 +76,24 @@ def bar_3(kappa, lam, eta):
 from scipy.special import erf, erfc
 
 
-def foo_3(k, a):
-    sqrt_term = np.sqrt(np.pi / 2) * np.exp( a**2 / (2 * k) )
-    term2 = np.exp(a) * (a + k) * (1 + erf((a + k) / (np.sqrt(2) * np.sqrt(k))))
-    term3 = np.exp(-a) * (a - k) * (1 - erf((a - k) / (np.sqrt(2) * np.sqrt(k))))
+def foo_3(k, eta):
+    sqrt_term = np.pi * np.sqrt(2 * np.pi / kappa) * np.exp( eta**2 / (2 * k) ) / eta
+    term2 = np.exp(eta) * (eta / kappa + 1) * (1 + erf((eta + k) / (np.sqrt(2 * k))))
+    term3 = np.exp(-eta) * (eta / kappa - 1) * (1 - erf((eta - k) / (np.sqrt(2 * k))))
     return sqrt_term * (term2 + term3)
 
 
-def baz_3(k, a):
-    term1 = -2 * np.sqrt( k ) * (-a + k )
-    term2 = 2 * np.sqrt( k ) * ( a + k )
-    term3 = np.exp(( a + k )** 2 / ( 2 * k )) * ( k + ( a + k )** 2) * np.sqrt( 2 * np.pi ) * ( 1 + erf (( a + k ) / np.sqrt( 2 * k )))
-    term4 = -np.exp(( a - k )** 2 / ( 2 * k )) * (( a - k )** 2 + k ) * np.sqrt( 2 * np.pi ) * erfc(( a - k ) / np.sqrt( 2 * k ))
-    return ( term1 + term2 + term3 + term4) / ( np.exp( k / 2) * ( 2 * k ) )
+def baz_3(k, eta):
+    term2 = 4 / np.sqrt( 2 * np.pi * k ) * eta / kappa
+    term3 =  np.exp( eta**2/2/k + eta + k ) * ( 1 / k + ( eta / k + 1 )** 2 ) * ( 1 + erf (( eta + k ) / np.sqrt( 2 * k )))
+    term4 = -np.exp( eta**2/2/k - eta + k ) * ( 1 / k + ( eta / k - 1 )** 2 ) * ( 1 - erf (( eta - k ) / np.sqrt( 2 * k )))
+    return ( term2 + term3 + term4) * np.pi / ( np.exp( k / 2) * ( 2 * k ) ) / eta * np.sqrt( 2 * np.pi / kappa) * 2 * k
 
 
 for i, eta_i in enumerate(eta):
     num = quad(lambda lam: bar_3(kappa, lam, eta_i), 0, np.inf)[0]
     den = quad(lambda lam: foo(kappa, lam, eta_i), 0, np.inf)[0]
-    print(eta_i, num / den, 1 + eta_i / kappa, baz_3(kappa, eta_i) / foo_3(kappa, eta_i), 1 + (eta_i + 1)/kappa/2)
+    print(eta_i, num / den, baz_3(kappa, eta_i) / foo_3(kappa, eta_i))
 
 
 # def p(kappa, lam, eta):
