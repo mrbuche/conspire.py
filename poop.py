@@ -85,8 +85,8 @@ def foo_3(k, eta):
 
 def baz_3(k, eta):
     term2 = 4 / np.sqrt( 2 * np.pi * k ) * eta / kappa
-    term3 =  np.exp( eta**2/2/k + eta + k ) * ( 1 / k + ( eta / k + 1 )** 2 ) * ( 1 + erf (( eta + k ) / np.sqrt( 2 * k )))
-    term4 = -np.exp( eta**2/2/k - eta + k ) * ( 1 / k + ( eta / k - 1 )** 2 ) * ( 1 - erf (( eta - k ) / np.sqrt( 2 * k )))
+    term3 =  np.exp( eta**2/2/k + eta + k/2 ) * ( 1 / k + ( eta / k + 1 )** 2 ) * ( 1 + erf (( eta + k ) / np.sqrt( 2 * k )))
+    term4 = -np.exp( eta**2/2/k - eta + k/2 ) * ( 1 / k + ( eta / k - 1 )** 2 ) * ( 1 - erf (( eta - k ) / np.sqrt( 2 * k )))
     return ( term2 + term3 + term4) * np.pi / ( np.exp( k / 2) * ( 2 * k ) ) / eta * np.sqrt( 2 * np.pi / kappa) * 2 * k
 
 
