@@ -25,7 +25,7 @@ def baz(kappa, eta):
     return (1 / 2 + helper(kappa, eta) + eta**2 / kappa / 2) / kappa
 
 
-kappa = 0.01  # 10
+kappa = 3  # 10
 eta = np.linspace(1e-6, 10 * kappa, 5)
 for i, eta_i in enumerate(eta):
     num = quad(lambda lam: bar(kappa, lam, eta_i), 0, np.inf)[0]
@@ -178,30 +178,42 @@ for i, eta_i in enumerate(eta):
         lambda_asmptotic_2(kappa, eta_i),
     )
 
-
-# def p(kappa, lam, eta):
-#     return (
-#         1
-#         / np.sqrt(2 * np.pi / kappa)
-#         * lam
-#         # * np.sinh(lam * eta)
-#         # / np.sinh(eta)
-#         * (
-#             np.exp(eta * (lam - 1) - kappa * (lam - 1) ** 2 / 2 - eta**2 / 2 / kappa)
-#             - np.exp(-eta * (lam + 1) - kappa * (lam - 1) ** 2 / 2 - eta**2 / 2 / kappa)
-#         )
-#         / (1.0 - np.exp(-2.0 * eta))
-#         # * np.exp(-kappa * (lam - 1) ** 2 / 2 - eta**2 / 2 / kappa)
-#         / (1 + eta / kappa / np.tanh(eta))
-#     )
+print()
 
 
-# import matplotlib.pyplot as plt
+def bar_5(kappa, lam, eta):
+    return foo(kappa, lam, eta) * lam**3
 
-# lamb = np.linspace(1e-6, 4, 100)
 
-# for i, eta_i in enumerate(eta):
-#     print(quad(lambda lam: p(kappa, lam, eta_i), 1e-6, np.inf)[0])
-#     plt.plot(lamb, p(kappa, lamb, eta_i))
+def baz_5(k, a):
+    return 0
 
-# plt.show()
+
+for i, eta_i in enumerate(eta):
+    num = quad(lambda lam: bar_5(kappa, lam, eta_i), 0, np.inf)[0]
+    den = quad(lambda lam: foo(kappa, lam, eta_i), 0, np.inf)[0]
+    print(
+        eta_i,
+        num / den,
+        baz_5(kappa, eta_i) / foo_3(kappa, eta_i),
+    )
+
+print()
+
+
+def bar_6(kappa, lam, eta):
+    return foo(kappa, lam, eta) * lam**4
+
+
+def baz_6(k, a):
+    return 0
+
+
+for i, eta_i in enumerate(eta):
+    num = quad(lambda lam: bar_6(kappa, lam, eta_i), 0, np.inf)[0]
+    den = quad(lambda lam: foo(kappa, lam, eta_i), 0, np.inf)[0]
+    print(
+        eta_i,
+        num / den,
+        baz_6(kappa, eta_i) / foo_3(kappa, eta_i),
+    )
