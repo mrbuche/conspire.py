@@ -351,6 +351,12 @@ impl ExtensibleFreelyJointedChain {
             nondimensional_force,
         )?)
     }
+    fn nondimensional_compliance(&self, nondimensional_force: Scalar) -> Result<Scalar, PyErrGlue> {
+        Ok(Thermodynamics::nondimensional_compliance(
+            &self.0,
+            nondimensional_force,
+        )?)
+    }
     fn nondimensional_link_energy_average(
         &self,
         nondimensional_value: Scalar,
@@ -468,6 +474,24 @@ impl ArbitraryPotentialFreelyJointedChain {
     #[getter]
     pub fn number_of_links(&self) -> u8 {
         self.number_of_links
+    }
+    fn nondimensional_extension(&self, nondimensional_value: Scalar) -> Result<Scalar, PyErrGlue> {
+        match self.potential.clone() {
+            Potential::Harmonic {
+                rest_length,
+                stiffness,
+            } => Ok(Thermodynamics::nondimensional_extension(
+                &Ufjc {
+                    number_of_links: self.number_of_links,
+                    link_potential: Harmonic {
+                        rest_length,
+                        stiffness,
+                    },
+                    ensemble: self.ensemble,
+                },
+                nondimensional_value,
+            )?),
+        }
     }
     fn nondimensional_link_energy_average(
         &self,

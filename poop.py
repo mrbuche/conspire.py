@@ -25,7 +25,7 @@ def baz(kappa, eta):
     return (1 / 2 + helper(kappa, eta) + eta**2 / kappa / 2) / kappa
 
 
-kappa = 10
+kappa = 0.01  # 10
 eta = np.linspace(1e-6, 10 * kappa, 5)
 for i, eta_i in enumerate(eta):
     num = quad(lambda lam: bar(kappa, lam, eta_i), 0, np.inf)[0]
@@ -78,8 +78,8 @@ from scipy.special import erf, erfc
 
 def foo_3(k, eta):
     prefactor = np.pi * np.sqrt(2 * np.pi / kappa) * np.exp(eta**2 / (2 * k)) / eta
-    term2 = np.exp(+eta) * (eta / kappa + 1) * (1 + erf((eta + k) / (np.sqrt(2 * k))))
-    term3 = np.exp(-eta) * (eta / kappa - 1) * (1 - erf((eta - k) / (np.sqrt(2 * k))))
+    term2 = np.exp(+eta) * (eta / kappa + 1) * (1 + erf((eta + k) / np.sqrt(2 * k)))
+    term3 = np.exp(-eta) * (eta / kappa - 1) * (1 - erf((eta - k) / np.sqrt(2 * k)))
     return prefactor * (term2 + term3)
 
 
@@ -116,7 +116,7 @@ def lambda_asmptotic(kappa, eta):
     return (
         1
         + eta_over_kappa
-        + (1 / kappa + eta_over_kappa * (1 - eta_over_kappa)* (1 / np.tanh(eta) - 1))
+        + (1 / kappa + eta_over_kappa * (1 - eta_over_kappa) * (1 / np.tanh(eta) - 1))
         / (1 + eta_over_kappa / np.tanh(eta))
     )
 
@@ -138,27 +138,33 @@ def bar_4(kappa, lam, eta):
     return foo(kappa, lam, eta) * lam**2
 
 
-def baz_4( k, a ):
-    term1 = ( 2 * np.sqrt( k ) * ( 2 * k + ( a + k )** 2) +
-    np.exp(( a + k )** 2 / ( 2 * k )) * ( a + k ) * ( 3 * k + ( a + k )** 2) *
-    np.sqrt( 2 * np.pi) * ( 1 + erf (( a + k ) / ( np.sqrt( 2) * np.sqrt( k )))))
-    term1 /= ( np.exp( k / 2) * ( 2 * k **( 7/2)))
-    term2 = ( 2 * np.sqrt( k ) * (( a - k )** 2 + 2 * k ) -
-    np.exp(( a - k )** 2 / ( 2 * k )) * ( a - k ) * (( a - k )** 2 + 3 * k ) *
-    np.sqrt( 2 * np.pi) * erfc(( a - k ) / ( np.sqrt( 2) * np.sqrt( k ))))
-    term2 /= ( np.exp( k / 2) * ( 2 * k **( 7/2)))
+def baz_4(k, a):
+    term1 = 2 * np.sqrt(k) * (2 * k + (a + k) ** 2) + np.exp((a + k) ** 2 / (2 * k)) * (
+        a + k
+    ) * (3 * k + (a + k) ** 2) * np.sqrt(2 * np.pi) * (
+        1 + erf((a + k) / (np.sqrt(2) * np.sqrt(k)))
+    )
+    term1 /= np.exp(k / 2) * (2 * k ** (7 / 2))
+    term2 = 2 * np.sqrt(k) * ((a - k) ** 2 + 2 * k) - np.exp((a - k) ** 2 / (2 * k)) * (
+        a - k
+    ) * ((a - k) ** 2 + 3 * k) * np.sqrt(2 * np.pi) * erfc(
+        (a - k) / (np.sqrt(2) * np.sqrt(k))
+    )
+    term2 /= np.exp(k / 2) * (2 * k ** (7 / 2))
     return (term1 - term2) / a * np.pi * 2
 
 
 def lambda_asmptotic_2(kappa, eta):
     eta_over_kappa = eta / kappa
     return (
-        1 + 
-        (
-            2 * eta_over_kappa**2 + 3 / kappa
-            + (3 / kappa + 2) * eta_over_kappa/ np.tanh(eta)
+        1
+        + (
+            2 * eta_over_kappa**2
+            + 3 / kappa
+            + (3 / kappa + 2) * eta_over_kappa / np.tanh(eta)
         )
-        / (1 + eta_over_kappa / np.tanh(eta)) + eta_over_kappa**2
+        / (1 + eta_over_kappa / np.tanh(eta))
+        + eta_over_kappa**2
     )
 
 
