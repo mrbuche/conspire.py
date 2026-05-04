@@ -25,7 +25,7 @@ def baz(kappa, eta):
     return (1 / 2 + helper(kappa, eta) + eta**2 / kappa / 2) / kappa
 
 
-kappa = 3  # 10
+kappa = 1e-2  # 10
 eta = np.linspace(1e-6, 10 * kappa, 5)
 for i, eta_i in enumerate(eta):
     num = quad(lambda lam: bar(kappa, lam, eta_i), 0, np.inf)[0]
@@ -186,7 +186,53 @@ def bar_5(kappa, lam, eta):
 
 
 def baz_5(k, a):
-    return 0
+    return (
+        np.exp(-k / 2)
+        / (np.sqrt(2) * k ** (9 / 2))
+        * (
+            2 * np.sqrt(2) * a**3 * np.sqrt(k)
+            + 10 * np.sqrt(2) * a * k ** (3 / 2)
+            + 6 * np.sqrt(2) * a * k ** (5 / 2)
+            - a**4 * np.exp((a - k) ** 2 / (2 * k)) * np.sqrt(np.pi)
+            + a**4 * np.exp((a + k) ** 2 / (2 * k)) * np.sqrt(np.pi)
+            - 6 * a**2 * np.exp((a - k) ** 2 / (2 * k)) * k * np.sqrt(np.pi)
+            + 4 * a**3 * np.exp((a - k) ** 2 / (2 * k)) * k * np.sqrt(np.pi)
+            + 6 * a**2 * np.exp((a + k) ** 2 / (2 * k)) * k * np.sqrt(np.pi)
+            + 4 * a**3 * np.exp((a + k) ** 2 / (2 * k)) * k * np.sqrt(np.pi)
+            - 3 * np.exp((a - k) ** 2 / (2 * k)) * k**2 * np.sqrt(np.pi)
+            + 12 * a * np.exp((a - k) ** 2 / (2 * k)) * k**2 * np.sqrt(np.pi)
+            - 6 * a**2 * np.exp((a - k) ** 2 / (2 * k)) * k**2 * np.sqrt(np.pi)
+            + 3 * np.exp((a + k) ** 2 / (2 * k)) * k**2 * np.sqrt(np.pi)
+            + 12 * a * np.exp((a + k) ** 2 / (2 * k)) * k**2 * np.sqrt(np.pi)
+            + 6 * a**2 * np.exp((a + k) ** 2 / (2 * k)) * k**2 * np.sqrt(np.pi)
+            - 6 * np.exp((a - k) ** 2 / (2 * k)) * k**3 * np.sqrt(np.pi)
+            + 4 * a * np.exp((a - k) ** 2 / (2 * k)) * k**3 * np.sqrt(np.pi)
+            + 6 * np.exp((a + k) ** 2 / (2 * k)) * k**3 * np.sqrt(np.pi)
+            + 4 * a * np.exp((a + k) ** 2 / (2 * k)) * k**3 * np.sqrt(np.pi)
+            - np.exp((a - k) ** 2 / (2 * k)) * k**4 * np.sqrt(np.pi)
+            + np.exp((a + k) ** 2 / (2 * k)) * k**4 * np.sqrt(np.pi)
+            + np.exp((a - k) ** 2 / (2 * k))
+            * (
+                a**4
+                - 4 * a**3 * k
+                + 6 * a**2 * k * (1 + k)
+                - 4 * a * k**2 * (3 + k)
+                + k**2 * (3 + 6 * k + k**2)
+            )
+            * np.sqrt(np.pi)
+            * erf((a - k) / (np.sqrt(2) * np.sqrt(k)))
+            + np.exp((a + k) ** 2 / (2 * k))
+            * (
+                a**4
+                + 4 * a**3 * k
+                + 6 * a**2 * k * (1 + k)
+                + 4 * a * k**2 * (3 + k)
+                + k**2 * (3 + 6 * k + k**2)
+            )
+            * np.sqrt(np.pi)
+            * erf((a + k) / (np.sqrt(2) * np.sqrt(k)))
+        ) / a * np.pi * 2
+    )
 
 
 for i, eta_i in enumerate(eta):
@@ -206,7 +252,72 @@ def bar_6(kappa, lam, eta):
 
 
 def baz_6(k, a):
-    return 0
+    return (
+        np.exp(-k / 2)
+        / (2 * k ** (11 / 2))
+        * (
+            -2 * (a - k) ** 4 * np.sqrt(k)
+            - 18 * (a - k) ** 2 * k ** (3 / 2)
+            + 18 * k ** (7 / 2)
+            + 2 * k ** (9 / 2)
+            + 2 * np.sqrt(2) * a**3 * k * (
+                2 * np.sqrt(2) * np.sqrt(k)
+                + 5 * np.exp((a + k) ** 2 / (2 * k)) * np.sqrt(np.pi)
+                + 5 * np.exp((a + k) ** 2 / (2 * k)) * k * np.sqrt(np.pi)
+            )
+            + a**5 * np.exp((a + k) ** 2 / (2 * k)) * np.sqrt(2 * np.pi)
+            + 15 * np.exp((a + k) ** 2 / (2 * k)) * k**3 * np.sqrt(2 * np.pi)
+            + 10 * np.exp((a + k) ** 2 / (2 * k)) * k**4 * np.sqrt(2 * np.pi)
+            + np.exp((a + k) ** 2 / (2 * k)) * k**5 * np.sqrt(2 * np.pi)
+            + a**4 * (
+                2 * np.sqrt(k)
+                + 5 * np.exp((a + k) ** 2 / (2 * k)) * k * np.sqrt(2 * np.pi)
+            )
+            + 2 * a**2 * k ** (3 / 2) * (
+                9
+                + 6 * k
+                + 15 * np.exp((a + k) ** 2 / (2 * k)) * np.sqrt(k) * np.sqrt(2 * np.pi)
+                + 5 * np.exp((a + k) ** 2 / (2 * k)) * k ** (3 / 2) * np.sqrt(2 * np.pi)
+            )
+            + a * k**2 * (
+                36 * np.sqrt(k)
+                + 8 * k ** (3 / 2)
+                + 15 * np.exp((a + k) ** 2 / (2 * k)) * np.sqrt(2 * np.pi)
+                + 30 * np.exp((a + k) ** 2 / (2 * k)) * k * np.sqrt(2 * np.pi)
+                + 5 * np.exp((a + k) ** 2 / (2 * k)) * k**2 * np.sqrt(2 * np.pi)
+            )
+            - np.exp((a - k) ** 2 / (2 * k))
+            * (a - k) ** 5
+            * np.sqrt(2 * np.pi)
+            * (-1 + erf((a - k) / (np.sqrt(2) * np.sqrt(k))))
+            - 10
+            * np.exp((a - k) ** 2 / (2 * k))
+            * (a - k) ** 3
+            * k
+            * np.sqrt(2 * np.pi)
+            * (-1 + erf((a - k) / (np.sqrt(2) * np.sqrt(k))))
+            - 15
+            * np.exp((a - k) ** 2 / (2 * k))
+            * (a - k)
+            * k**2
+            * np.sqrt(2 * np.pi)
+            * (-1 + erf((a - k) / (np.sqrt(2) * np.sqrt(k))))
+            + np.exp((a + k) ** 2 / (2 * k))
+            * (
+                a**5
+                + 5 * a**4 * k
+                + 10 * a**3 * k * (1 + k)
+                + 10 * a**2 * k**2 * (3 + k)
+                + 5 * a * k**2 * (3 + 6 * k + k**2)
+                + k**3 * (15 + 10 * k + k**2)
+            )
+            * np.sqrt(2 * np.pi)
+            * erf((a + k) / (np.sqrt(2) * np.sqrt(k)))
+        )
+        / a
+        * np.pi
+        * 2
+    )
 
 
 for i, eta_i in enumerate(eta):
