@@ -25,7 +25,7 @@ def baz(kappa, eta):
     return (1 / 2 + helper(kappa, eta) + eta**2 / kappa / 2) / kappa
 
 
-kappa = 1e-2  # 10
+kappa = 10  # 10
 eta = np.linspace(1e-6, 10 * kappa, 5)
 for i, eta_i in enumerate(eta):
     num = quad(lambda lam: bar(kappa, lam, eta_i), 0, np.inf)[0]
@@ -115,9 +115,14 @@ def lambda_asmptotic(kappa, eta):
     eta_over_kappa = eta / kappa
     return (
         1
-        + eta_over_kappa
-        + (1 / kappa + eta_over_kappa * (1 - eta_over_kappa) * (1 / np.tanh(eta) - 1))
+        + (1 / kappa + eta_over_kappa / np.tanh(eta) - eta_over_kappa * (1))
         / (1 + eta_over_kappa / np.tanh(eta))
+        + eta_over_kappa
+        # 1
+        # + eta_over_kappa
+        # # + (1 / kappa + eta_over_kappa * (1 - eta_over_kappa) * (1 / np.tanh(eta) - 1))
+        # + (1 / kappa + eta_over_kappa * (1 / np.tanh(eta) - 1))
+        # / (1 + eta_over_kappa / np.tanh(eta))
     )
 
 
@@ -125,6 +130,7 @@ for i, eta_i in enumerate(eta):
     num = quad(lambda lam: bar_3(kappa, lam, eta_i), 0, np.inf)[0]
     den = quad(lambda lam: foo(kappa, lam, eta_i), 0, np.inf)[0]
     print(
+        "lambda",
         eta_i,
         num / den,
         baz_3(kappa, eta_i) / foo_3(kappa, eta_i),
@@ -231,7 +237,10 @@ def baz_5(k, a):
             )
             * np.sqrt(np.pi)
             * erf((a + k) / (np.sqrt(2) * np.sqrt(k)))
-        ) / a * np.pi * 2
+        )
+        / a
+        * np.pi
+        * 2
     )
 
 
@@ -260,7 +269,11 @@ def baz_6(k, a):
             - 18 * (a - k) ** 2 * k ** (3 / 2)
             + 18 * k ** (7 / 2)
             + 2 * k ** (9 / 2)
-            + 2 * np.sqrt(2) * a**3 * k * (
+            + 2
+            * np.sqrt(2)
+            * a**3
+            * k
+            * (
                 2 * np.sqrt(2) * np.sqrt(k)
                 + 5 * np.exp((a + k) ** 2 / (2 * k)) * np.sqrt(np.pi)
                 + 5 * np.exp((a + k) ** 2 / (2 * k)) * k * np.sqrt(np.pi)
@@ -269,17 +282,23 @@ def baz_6(k, a):
             + 15 * np.exp((a + k) ** 2 / (2 * k)) * k**3 * np.sqrt(2 * np.pi)
             + 10 * np.exp((a + k) ** 2 / (2 * k)) * k**4 * np.sqrt(2 * np.pi)
             + np.exp((a + k) ** 2 / (2 * k)) * k**5 * np.sqrt(2 * np.pi)
-            + a**4 * (
+            + a**4
+            * (
                 2 * np.sqrt(k)
                 + 5 * np.exp((a + k) ** 2 / (2 * k)) * k * np.sqrt(2 * np.pi)
             )
-            + 2 * a**2 * k ** (3 / 2) * (
+            + 2
+            * a**2
+            * k ** (3 / 2)
+            * (
                 9
                 + 6 * k
                 + 15 * np.exp((a + k) ** 2 / (2 * k)) * np.sqrt(k) * np.sqrt(2 * np.pi)
                 + 5 * np.exp((a + k) ** 2 / (2 * k)) * k ** (3 / 2) * np.sqrt(2 * np.pi)
             )
-            + a * k**2 * (
+            + a
+            * k**2
+            * (
                 36 * np.sqrt(k)
                 + 8 * k ** (3 / 2)
                 + 15 * np.exp((a + k) ** 2 / (2 * k)) * np.sqrt(2 * np.pi)
