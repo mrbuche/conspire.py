@@ -21,7 +21,8 @@ dependencies = [
 [[package]]
 name = "conspire"
 version = "0.6.2"
-source = "git+https://github.com/mrbuche/conspire.rs.git?branch=physics-ufjc#45eba092cfd2120d04a5031bedc8bb500f75a3a5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a23145156f27716a69d179958c45d0379584db252fae92262490857c9a347b2a"
 
 [[package]]
 name = "heck"
