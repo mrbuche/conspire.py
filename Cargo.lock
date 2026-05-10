@@ -12,7 +12,7 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 name = "conspire"
 version = "0.6.1"
 dependencies = [
- "conspire 0.6.1 (git+https://github.com/mrbuche/conspire.rs.git?branch=physics-ufjc)",
+ "conspire 0.6.2",
  "ndarray",
  "numpy",
  "pyo3",
@@ -20,8 +20,8 @@ dependencies = [
 
 [[package]]
 name = "conspire"
-version = "0.6.1"
-source = "git+https://github.com/mrbuche/conspire.rs.git?branch=physics-ufjc#ef5429f4540af4b07e57e9b159956b4c46bf7dff"
+version = "0.6.2"
+source = "git+https://github.com/mrbuche/conspire.rs.git?branch=physics-ufjc#45eba092cfd2120d04a5031bedc8bb500f75a3a5"
 
 [[package]]
 name = "heck"
