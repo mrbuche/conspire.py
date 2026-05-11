@@ -12,7 +12,7 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 name = "conspire"
 version = "0.6.1"
 dependencies = [
- "conspire 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "conspire 0.6.2",
  "ndarray",
  "numpy",
  "pyo3",
@@ -20,9 +20,9 @@ dependencies = [
 
 [[package]]
 name = "conspire"
-version = "0.6.1"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a735bd04af1dae9bfc58bb872567b6baa21e61d9f0f0542dd285e070715721a2"
+checksum = "a23145156f27716a69d179958c45d0379584db252fae92262490857c9a347b2a"
 
 [[package]]
 name = "heck"
@@ -41,9 +41,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.184"
+version = "0.2.186"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "48f5d2a454e16a5ea0f4ced81bd44e4cfc7bd3a507b61887c99fd3538b28e4af"
+checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
 
 [[package]]
 name = "matrixmultiply"
@@ -136,9 +136,9 @@ checksum = "c33a9471896f1c69cecef8d20cbe2f7accd12527ce60845ff44c153bb2a21b49"
 
 [[package]]
 name = "portable-atomic-util"
-version = "0.2.6"
+version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "091397be61a01d4be58e7841595bd4bfedb15f1cd54977d79b8271e94ed799a3"
+checksum = "c2a106d1259c23fac8e543272398ae0e3c0b8d33c88ed73d0cc71b0f1d902618"
 dependencies = [
  "portable-atomic",
 ]

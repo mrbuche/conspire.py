@@ -1,24 +1,29 @@
 use crate::PyErrGlue;
 use conspire::{
     math::Scalar,
-    physics::molecular::single_chain::{
-        // ArbitraryPotentialFreelyJointedChain as Ufjc,
-        Ensemble,
-        // ExtensibleFreelyJointedChain as Efjc,
-        FreelyJointedChain as Fjc,
-        MonteCarloInextensible,
-        // IdealChain as Ideal,
-        SingleChainError,
-        SquareWellFreelyJointedChain as Swfjc,
-        Thermodynamics,
+    physics::molecular::{
+        potential::Harmonic,
+        single_chain::{
+            ArbitraryPotentialFreelyJointedChain as Ufjc,
+            Ensemble,
+            ExtensibleFreelyJointedChain as Efjc,
+            FreelyJointedChain as Fjc,
+            MonteCarloInextensible,
+            // IdealChain as Ideal,
+            SingleChainError,
+            SquareWellFreelyJointedChain as Swfjc,
+            Thermodynamics,
+            ThermodynamicsExtensible,
+        },
     },
 };
 use numpy::{FromVecError, PyArray1, PyArray2};
 use pyo3::prelude::*;
 
 pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    // m.add_class::<ArbitraryPotentialFreelyJointedChain>()?;
-    // m.add_class::<ExtensibleFreelyJointedChain>()?;
+    m.add_class::<Potential>()?;
+    m.add_class::<ArbitraryPotentialFreelyJointedChain>()?;
+    m.add_class::<ExtensibleFreelyJointedChain>()?;
     m.add_class::<FreelyJointedChain>()?;
     // m.add_class::<IdealChain>()?;
     m.add_class::<SquareWellFreelyJointedChain>()
@@ -239,3 +244,395 @@ macro_rules! single_chain {
 // single_chain!(IdealChain, Ideal, link_length);
 single_chain!(FreelyJointedChain, Fjc, link_length);
 single_chain!(SquareWellFreelyJointedChain, Swfjc, link_length, well_width);
+
+#[pyclass]
+pub struct ExtensibleFreelyJointedChain(Efjc);
+
+#[pymethods]
+impl ExtensibleFreelyJointedChain {
+    #[new]
+    fn new(
+        number_of_links: u8,
+        link_length: Scalar,
+        link_stiffness: Scalar,
+        ensemble: String,
+        temperature: Scalar,
+    ) -> Self {
+        let ensemble = match ensemble.as_str() {
+            "isometric" => Ensemble::Isometric(temperature),
+            "isotensional" => Ensemble::Isotensional(temperature),
+            _ => panic!(),
+        };
+        Self(Efjc {
+            number_of_links,
+            link_length,
+            link_stiffness,
+            ensemble,
+        })
+    }
+    /// @private
+    #[getter]
+    pub fn number_of_links(&self) -> u8 {
+        self.0.number_of_links
+    }
+    /// @private
+    #[getter]
+    pub fn link_length(&self) -> Scalar {
+        self.0.link_length
+    }
+    /// @private
+    #[getter]
+    pub fn link_stiffness(&self) -> Scalar {
+        self.0.link_stiffness
+    }
+    fn nondimensional_helmholtz_free_energy(
+        &self,
+        nondimensional_extension: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(self
+            .0
+            .nondimensional_helmholtz_free_energy(nondimensional_extension)?)
+    }
+    fn nondimensional_helmholtz_free_energy_per_link(
+        &self,
+        nondimensional_extension: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(self
+            .0
+            .nondimensional_helmholtz_free_energy_per_link(nondimensional_extension)?)
+    }
+    fn nondimensional_force(&self, nondimensional_extension: Scalar) -> Result<Scalar, PyErrGlue> {
+        Ok(self.0.nondimensional_force(nondimensional_extension)?)
+    }
+    fn nondimensional_stiffness(
+        &self,
+        nondimensional_extension: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(self.0.nondimensional_stiffness(nondimensional_extension)?)
+    }
+    fn nondimensional_radial_distribution(
+        &self,
+        nondimensional_extension: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(Thermodynamics::nondimensional_radial_distribution(
+            &self.0,
+            nondimensional_extension,
+        )?)
+    }
+    fn nondimensional_spherical_distribution(
+        &self,
+        nondimensional_extension: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(self
+            .0
+            .nondimensional_spherical_distribution(nondimensional_extension)?)
+    }
+    fn nondimensional_gibbs_free_energy(
+        &self,
+        nondimensional_force: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(Thermodynamics::nondimensional_gibbs_free_energy(
+            &self.0,
+            nondimensional_force,
+        )?)
+    }
+    fn nondimensional_gibbs_free_energy_per_link(
+        &self,
+        nondimensional_force: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(Thermodynamics::nondimensional_gibbs_free_energy_per_link(
+            &self.0,
+            nondimensional_force,
+        )?)
+    }
+    fn nondimensional_extension(&self, nondimensional_force: Scalar) -> Result<Scalar, PyErrGlue> {
+        Ok(Thermodynamics::nondimensional_extension(
+            &self.0,
+            nondimensional_force,
+        )?)
+    }
+    fn nondimensional_compliance(&self, nondimensional_force: Scalar) -> Result<Scalar, PyErrGlue> {
+        Ok(Thermodynamics::nondimensional_compliance(
+            &self.0,
+            nondimensional_force,
+        )?)
+    }
+    fn nondimensional_link_energy_average(
+        &self,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(
+            ThermodynamicsExtensible::nondimensional_link_energy_average(
+                &self.0,
+                nondimensional_value,
+            )?,
+        )
+    }
+    fn nondimensional_link_energy_variance(
+        &self,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(
+            ThermodynamicsExtensible::nondimensional_link_energy_variance(
+                &self.0,
+                nondimensional_value,
+            )?,
+        )
+    }
+    fn nondimensional_link_energy_probability(
+        &self,
+        nondimensional_energy: Scalar,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(
+            ThermodynamicsExtensible::nondimensional_link_energy_probability(
+                &self.0,
+                nondimensional_energy,
+                nondimensional_value,
+            )?,
+        )
+    }
+    fn nondimensional_link_length_average(
+        &self,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(
+            ThermodynamicsExtensible::nondimensional_link_length_average(
+                &self.0,
+                nondimensional_value,
+            )?,
+        )
+    }
+    fn nondimensional_link_length_variance(
+        &self,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(
+            ThermodynamicsExtensible::nondimensional_link_length_variance(
+                &self.0,
+                nondimensional_value,
+            )?,
+        )
+    }
+    fn nondimensional_link_length_probability(
+        &self,
+        nondimensional_length: Scalar,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        Ok(
+            ThermodynamicsExtensible::nondimensional_link_length_probability(
+                &self.0,
+                nondimensional_length,
+                nondimensional_value,
+            )?,
+        )
+    }
+}
+
+#[pyclass]
+#[derive(Clone, Debug)]
+enum Potential {
+    Harmonic {
+        rest_length: Scalar,
+        stiffness: Scalar,
+    },
+    // Morse {
+    //     rest_length: Scalar,
+    //     depth: Scalar,
+    //     parameter: Scalar,
+    // },
+}
+
+#[pyclass]
+pub struct ArbitraryPotentialFreelyJointedChain {
+    number_of_links: u8,
+    potential: Potential,
+    ensemble: Ensemble,
+}
+
+#[pymethods]
+impl ArbitraryPotentialFreelyJointedChain {
+    #[new]
+    fn new(
+        number_of_links: u8,
+        potential: Potential,
+        ensemble: String,
+        temperature: Scalar,
+    ) -> Self {
+        let ensemble = match ensemble.as_str() {
+            "isometric" => Ensemble::Isometric(temperature),
+            "isotensional" => Ensemble::Isotensional(temperature),
+            _ => panic!(),
+        };
+        Self {
+            number_of_links,
+            potential,
+            ensemble,
+        }
+    }
+    /// @private
+    #[getter]
+    pub fn number_of_links(&self) -> u8 {
+        self.number_of_links
+    }
+    fn nondimensional_extension(&self, nondimensional_value: Scalar) -> Result<Scalar, PyErrGlue> {
+        match self.potential.clone() {
+            Potential::Harmonic {
+                rest_length,
+                stiffness,
+            } => Ok(Thermodynamics::nondimensional_extension(
+                &Ufjc {
+                    number_of_links: self.number_of_links,
+                    link_potential: Harmonic {
+                        rest_length,
+                        stiffness,
+                    },
+                    ensemble: self.ensemble,
+                },
+                nondimensional_value,
+            )?),
+        }
+    }
+    fn nondimensional_link_energy_average(
+        &self,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        match self.potential.clone() {
+            Potential::Harmonic {
+                rest_length,
+                stiffness,
+            } => Ok(
+                ThermodynamicsExtensible::nondimensional_link_energy_average(
+                    &Ufjc {
+                        number_of_links: self.number_of_links,
+                        link_potential: Harmonic {
+                            rest_length,
+                            stiffness,
+                        },
+                        ensemble: self.ensemble,
+                    },
+                    nondimensional_value,
+                )?,
+            ),
+        }
+    }
+    fn nondimensional_link_energy_variance(
+        &self,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        match self.potential.clone() {
+            Potential::Harmonic {
+                rest_length,
+                stiffness,
+            } => Ok(
+                ThermodynamicsExtensible::nondimensional_link_energy_variance(
+                    &Ufjc {
+                        number_of_links: self.number_of_links,
+                        link_potential: Harmonic {
+                            rest_length,
+                            stiffness,
+                        },
+                        ensemble: self.ensemble,
+                    },
+                    nondimensional_value,
+                )?,
+            ),
+        }
+    }
+    fn nondimensional_link_energy_probability(
+        &self,
+        nondimensional_link_energy: Scalar,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        match self.potential.clone() {
+            Potential::Harmonic {
+                rest_length,
+                stiffness,
+            } => Ok(
+                ThermodynamicsExtensible::nondimensional_link_energy_probability(
+                    &Ufjc {
+                        number_of_links: self.number_of_links,
+                        link_potential: Harmonic {
+                            rest_length,
+                            stiffness,
+                        },
+                        ensemble: self.ensemble,
+                    },
+                    nondimensional_link_energy,
+                    nondimensional_value,
+                )?,
+            ),
+        }
+    }
+    fn nondimensional_link_length_average(
+        &self,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        match self.potential.clone() {
+            Potential::Harmonic {
+                rest_length,
+                stiffness,
+            } => Ok(
+                ThermodynamicsExtensible::nondimensional_link_length_average(
+                    &Ufjc {
+                        number_of_links: self.number_of_links,
+                        link_potential: Harmonic {
+                            rest_length,
+                            stiffness,
+                        },
+                        ensemble: self.ensemble,
+                    },
+                    nondimensional_value,
+                )?,
+            ),
+        }
+    }
+    fn nondimensional_link_length_variance(
+        &self,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        match self.potential.clone() {
+            Potential::Harmonic {
+                rest_length,
+                stiffness,
+            } => Ok(
+                ThermodynamicsExtensible::nondimensional_link_length_variance(
+                    &Ufjc {
+                        number_of_links: self.number_of_links,
+                        link_potential: Harmonic {
+                            rest_length,
+                            stiffness,
+                        },
+                        ensemble: self.ensemble,
+                    },
+                    nondimensional_value,
+                )?,
+            ),
+        }
+    }
+    fn nondimensional_link_length_probability(
+        &self,
+        nondimensional_link_length: Scalar,
+        nondimensional_value: Scalar,
+    ) -> Result<Scalar, PyErrGlue> {
+        match self.potential.clone() {
+            Potential::Harmonic {
+                rest_length,
+                stiffness,
+            } => Ok(
+                ThermodynamicsExtensible::nondimensional_link_length_probability(
+                    &Ufjc {
+                        number_of_links: self.number_of_links,
+                        link_potential: Harmonic {
+                            rest_length,
+                            stiffness,
+                        },
+                        ensemble: self.ensemble,
+                    },
+                    nondimensional_link_length,
+                    nondimensional_value,
+                )?,
+            ),
+        }
+    }
+}
