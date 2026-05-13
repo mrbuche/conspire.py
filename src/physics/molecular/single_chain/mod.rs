@@ -7,7 +7,10 @@ use conspire::{
             ArbitraryPotentialFreelyJointedChain as Ufjc,
             Ensemble,
             ExtensibleFreelyJointedChain as Efjc,
+            ExtensibleFreelyRotatingChain as Efrc,
             FreelyJointedChain as Fjc,
+            FreelyRotatingChain as Frc,
+            MonteCarlo,
             MonteCarloInextensible,
             // IdealChain as Ideal,
             SingleChainError,
@@ -24,7 +27,9 @@ pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Potential>()?;
     m.add_class::<ArbitraryPotentialFreelyJointedChain>()?;
     m.add_class::<ExtensibleFreelyJointedChain>()?;
+    m.add_class::<ExtensibleFreelyRotatingChain>()?;
     m.add_class::<FreelyJointedChain>()?;
+    m.add_class::<FreelyRotatingChain>()?;
     // m.add_class::<IdealChain>()?;
     m.add_class::<SquareWellFreelyJointedChain>()
 }
@@ -104,36 +109,51 @@ macro_rules! single_chain {
             ) -> Result<Scalar, PyErrGlue> {
                 Ok(Thermodynamics::nondimensional_radial_distribution(&self.0, nondimensional_extension)?)
             }
-            fn cosine_powers_monte_carlo<'py>(
+            fn cosine_moments_monte_carlo<'py>(
                 &self,
                 py: Python<'py>,
                 nondimensional_force: Scalar,
-                num_powers: usize,
-                num_samples: usize,
-                num_threads: usize,
-            ) -> Result<Bound<'py, PyArray2<Scalar>>, FromVecError> {
-                PyArray2::from_vec2(py, &Vec::from(MonteCarloInextensible::cosine_powers(
-                    &self.0,
+                number_of_samples: usize,
+                number_of_threads: usize,
+            ) -> Result<(Bound<'py, PyArray1<Scalar>>, Bound<'py, PyArray2<Scalar>>, Bound<'py, PyArray1<Scalar>>, Bound<'py, PyArray2<Scalar>>), FromVecError> {
+                let (cos, coscos, cos2, cos2cos) = self.0.cosine_moments(
                     nondimensional_force,
-                    num_powers,
-                    num_samples,
-                    num_threads,
-                )))
+                    number_of_samples,
+                    number_of_threads,
+                );
+                Ok((
+                    PyArray1::from_vec(py, Vec::from(cos)),
+                    PyArray2::from_vec2(py, &Vec::from(coscos))?,
+                    PyArray1::from_vec(py, Vec::from(cos2)),
+                    PyArray2::from_vec2(py, &Vec::from(cos2cos))?,
+                ))
+            }
+            fn nondimensional_longitudinal_extension_monte_carlo(
+                &self,
+                nondimensional_force: Scalar,
+                number_of_samples: usize,
+                number_of_threads: usize,
+            ) -> Scalar {
+                self.0.nondimensional_longitudinal_extension(
+                    nondimensional_force,
+                    number_of_samples,
+                    number_of_threads,
+                )
             }
             fn nondimensional_angular_distribution_monte_carlo<'py>(
                 &self,
                 py: Python<'py>,
                 nondimensional_force: Scalar,
                 num_bins: usize,
-                num_samples: usize,
-                num_threads: usize,
+                number_of_samples: usize,
+                number_of_threads: usize,
             ) -> (Bound<'py, PyArray1<Scalar>>, Bound<'py, PyArray1<Scalar>>) {
                 let (g, p) = MonteCarloInextensible::nondimensional_angular_distribution(
                     &self.0,
                     nondimensional_force,
                     num_bins,
-                    num_samples,
-                    num_threads,
+                    number_of_samples,
+                    number_of_threads,
                 );
                 (PyArray1::from_vec(py, Vec::from(g)), PyArray1::from_vec(py, Vec::from(p)))
             }
@@ -142,15 +162,15 @@ macro_rules! single_chain {
                 py: Python<'py>,
                 nondimensional_force: Scalar,
                 num_bins: usize,
-                num_samples: usize,
-                num_threads: usize,
+                number_of_samples: usize,
+                number_of_threads: usize,
             ) -> (Bound<'py, PyArray1<Scalar>>, Bound<'py, PyArray1<Scalar>>) {
                 let (g, p) = MonteCarloInextensible::nondimensional_lateral_distribution(
                     &self.0,
                     nondimensional_force,
                     num_bins,
-                    num_samples,
-                    num_threads,
+                    number_of_samples,
+                    number_of_threads,
                 );
                 (PyArray1::from_vec(py, Vec::from(g)), PyArray1::from_vec(py, Vec::from(p)))
             }
@@ -159,15 +179,15 @@ macro_rules! single_chain {
                 py: Python<'py>,
                 nondimensional_force: Scalar,
                 num_bins: usize,
-                num_samples: usize,
-                num_threads: usize,
+                number_of_samples: usize,
+                number_of_threads: usize,
             ) -> (Bound<'py, PyArray1<Scalar>>, Bound<'py, PyArray1<Scalar>>) {
                 let (g, p) = MonteCarloInextensible::nondimensional_longitudinal_distribution(
                     &self.0,
                     nondimensional_force,
                     num_bins,
-                    num_samples,
-                    num_threads,
+                    number_of_samples,
+                    number_of_threads,
                 );
                 (PyArray1::from_vec(py, Vec::from(g)), PyArray1::from_vec(py, Vec::from(p)))
             }
@@ -176,15 +196,15 @@ macro_rules! single_chain {
                 py: Python<'py>,
                 nondimensional_force: Scalar,
                 num_bins: usize,
-                num_samples: usize,
-                num_threads: usize,
+                number_of_samples: usize,
+                number_of_threads: usize,
             ) -> (Bound<'py, PyArray1<Scalar>>, Bound<'py, PyArray1<Scalar>>) {
                 let (g, p) = MonteCarloInextensible::nondimensional_radial_distribution(
                     &self.0,
                     nondimensional_force,
                     num_bins,
-                    num_samples,
-                    num_threads,
+                    number_of_samples,
+                    number_of_threads,
                 );
                 (PyArray1::from_vec(py, Vec::from(g)), PyArray1::from_vec(py, Vec::from(p)))
             }
@@ -193,15 +213,15 @@ macro_rules! single_chain {
                 py: Python<'py>,
                 nondimensional_force: Scalar,
                 num_bins: usize,
-                num_samples: usize,
-                num_threads: usize,
+                number_of_samples: usize,
+                number_of_threads: usize,
             ) -> (Bound<'py, PyArray1<Scalar>>, Bound<'py, PyArray1<Scalar>>) {
                 let (g, p) = MonteCarloInextensible::nondimensional_transverse_distribution(
                     &self.0,
                     nondimensional_force,
                     num_bins,
-                    num_samples,
-                    num_threads,
+                    number_of_samples,
+                    number_of_threads,
                 );
                 (PyArray1::from_vec(py, Vec::from(g)), PyArray1::from_vec(py, Vec::from(p)))
             }
@@ -243,6 +263,7 @@ macro_rules! single_chain {
 // );
 // single_chain!(IdealChain, Ideal, link_length);
 single_chain!(FreelyJointedChain, Fjc, link_length);
+single_chain!(FreelyRotatingChain, Frc, link_angle, link_length);
 single_chain!(SquareWellFreelyJointedChain, Swfjc, link_length, well_width);
 
 #[pyclass]
@@ -425,6 +446,67 @@ impl ExtensibleFreelyJointedChain {
                 nondimensional_length,
                 nondimensional_value,
             )?,
+        )
+    }
+}
+
+#[pyclass]
+pub struct ExtensibleFreelyRotatingChain(Efrc);
+
+#[pymethods]
+impl ExtensibleFreelyRotatingChain {
+    #[new]
+    fn new(
+        number_of_links: u8,
+        link_angle: Scalar,
+        link_length: Scalar,
+        link_stiffness: Scalar,
+        ensemble: String,
+        temperature: Scalar,
+    ) -> Self {
+        let ensemble = match ensemble.as_str() {
+            "isometric" => Ensemble::Isometric(temperature),
+            "isotensional" => Ensemble::Isotensional(temperature),
+            _ => panic!(),
+        };
+        Self(Efrc {
+            number_of_links,
+            link_angle,
+            link_length,
+            link_stiffness,
+            ensemble,
+        })
+    }
+    /// @private
+    #[getter]
+    pub fn number_of_links(&self) -> u8 {
+        self.0.number_of_links
+    }
+    /// @private
+    #[getter]
+    pub fn link_angle(&self) -> Scalar {
+        self.0.link_angle
+    }
+    /// @private
+    #[getter]
+    pub fn link_length(&self) -> Scalar {
+        self.0.link_length
+    }
+    /// @private
+    #[getter]
+    pub fn link_stiffness(&self) -> Scalar {
+        self.0.link_stiffness
+    }
+    fn nondimensional_longitudinal_extension_monte_carlo(
+        &self,
+        nondimensional_force: Scalar,
+        number_of_samples: usize,
+        number_of_threads: usize,
+    ) -> Scalar {
+        self.0.nondimensional_longitudinal_extension(
+            nondimensional_force,
+            number_of_samples,
+            number_of_threads,
         )
     }
 }
