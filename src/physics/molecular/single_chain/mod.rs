@@ -4,6 +4,8 @@ use conspire::{
     physics::molecular::{
         potential::Harmonic,
         single_chain::{
+            ArbitraryDiscrete as Adc,
+            ArbitraryDiscretePotential as Adp,
             ArbitraryPotentialFreelyJointedChain as Ufjc,
             Ensemble,
             ExtensibleFreelyJointedChain as Efjc,
@@ -25,6 +27,8 @@ use pyo3::prelude::*;
 
 pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Potential>()?;
+    m.add_class::<ArbitraryDiscretePotential>()?;
+    m.add_class::<ArbitraryDiscreteChain>()?;
     m.add_class::<ArbitraryPotentialFreelyJointedChain>()?;
     m.add_class::<ExtensibleFreelyJointedChain>()?;
     m.add_class::<ExtensibleFreelyRotatingChain>()?;
@@ -716,5 +720,117 @@ impl ArbitraryPotentialFreelyJointedChain {
                 )?,
             ),
         }
+    }
+}
+
+#[pyclass]
+#[derive(Clone, Debug)]
+enum ArbitraryDiscretePotential {
+    Free(),
+    Rigid(Scalar),
+    Strong {
+        rest_length: Scalar,
+        stiffness: Scalar,
+    },
+    Weak {
+        rest_length: Scalar,
+        stiffness: Scalar,
+    },
+}
+
+#[pyclass]
+pub struct ArbitraryDiscreteChain(Adc);
+
+#[pymethods]
+impl ArbitraryDiscreteChain {
+    #[new]
+    fn new(
+        number_of_links: u8,
+        link_potential: ArbitraryDiscretePotential,
+        angular_potential: ArbitraryDiscretePotential,
+        torsional_potential: ArbitraryDiscretePotential,
+        ensemble: String,
+        temperature: Scalar,
+    ) -> Self {
+        let ensemble = match ensemble.as_str() {
+            "isometric" => Ensemble::Isometric(temperature),
+            "isotensional" => Ensemble::Isotensional(temperature),
+            _ => panic!(),
+        };
+        Self(Adc {
+            number_of_links,
+            link_potential: match link_potential {
+                ArbitraryDiscretePotential::Free() => Adp::Free,
+                ArbitraryDiscretePotential::Rigid(rest_value) => Adp::Rigid(rest_value),
+                ArbitraryDiscretePotential::Strong {
+                    rest_length,
+                    stiffness,
+                } => Adp::Strong(Harmonic {
+                    rest_length,
+                    stiffness,
+                }),
+                ArbitraryDiscretePotential::Weak {
+                    rest_length,
+                    stiffness,
+                } => Adp::Weak(Harmonic {
+                    rest_length,
+                    stiffness,
+                }),
+            },
+            angular_potential: match angular_potential {
+                ArbitraryDiscretePotential::Free() => Adp::Free,
+                ArbitraryDiscretePotential::Rigid(rest_value) => Adp::Rigid(rest_value),
+                ArbitraryDiscretePotential::Strong {
+                    rest_length,
+                    stiffness,
+                } => Adp::Strong(Harmonic {
+                    rest_length,
+                    stiffness,
+                }),
+                ArbitraryDiscretePotential::Weak {
+                    rest_length,
+                    stiffness,
+                } => Adp::Weak(Harmonic {
+                    rest_length,
+                    stiffness,
+                }),
+            },
+            torsional_potential: match torsional_potential {
+                ArbitraryDiscretePotential::Free() => Adp::Free,
+                ArbitraryDiscretePotential::Rigid(rest_value) => Adp::Rigid(rest_value),
+                ArbitraryDiscretePotential::Strong {
+                    rest_length,
+                    stiffness,
+                } => Adp::Strong(Harmonic {
+                    rest_length,
+                    stiffness,
+                }),
+                ArbitraryDiscretePotential::Weak {
+                    rest_length,
+                    stiffness,
+                } => Adp::Weak(Harmonic {
+                    rest_length,
+                    stiffness,
+                }),
+            },
+            ensemble,
+        })
+    }
+    /// @private
+    #[getter]
+    pub fn number_of_links(&self) -> u8 {
+        self.0.number_of_links
+    }
+    fn nondimensional_longitudinal_extension_monte_carlo(
+        &self,
+        nondimensional_force: Scalar,
+        number_of_samples: usize,
+        number_of_threads: usize,
+    ) -> Scalar {
+        self.0.nondimensional_longitudinal_extension(
+            nondimensional_force,
+            number_of_samples,
+            number_of_threads,
+        )
     }
 }
