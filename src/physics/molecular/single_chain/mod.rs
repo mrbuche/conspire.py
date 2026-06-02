@@ -2,7 +2,7 @@ use crate::PyErrGlue;
 use conspire::{
     math::Scalar,
     physics::molecular::{
-        potential::Harmonic,
+        potential::{Cosine, Harmonic},
         single_chain::{
             ArbitraryDiscrete as Adc,
             ArbitraryDiscretePotential as Adp,
@@ -783,14 +783,14 @@ impl ArbitraryDiscreteChain {
                 ArbitraryDiscretePotential::Strong {
                     rest_length,
                     stiffness,
-                } => Adp::Strong(Harmonic {
+                } => Adp::Strong(Cosine {
                     rest_length,
                     stiffness,
                 }),
                 ArbitraryDiscretePotential::Weak {
                     rest_length,
                     stiffness,
-                } => Adp::Weak(Harmonic {
+                } => Adp::Weak(Cosine {
                     rest_length,
                     stiffness,
                 }),
@@ -801,14 +801,14 @@ impl ArbitraryDiscreteChain {
                 ArbitraryDiscretePotential::Strong {
                     rest_length,
                     stiffness,
-                } => Adp::Strong(Harmonic {
+                } => Adp::Strong(Cosine {
                     rest_length,
                     stiffness,
                 }),
                 ArbitraryDiscretePotential::Weak {
                     rest_length,
                     stiffness,
-                } => Adp::Weak(Harmonic {
+                } => Adp::Weak(Cosine {
                     rest_length,
                     stiffness,
                 }),
