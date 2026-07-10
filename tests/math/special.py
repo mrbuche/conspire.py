@@ -1,4 +1,6 @@
 from conspire.math.special import (
+    erf,
+    erfc,
     inverse_langevin,
     lambert_w,
     langevin,
@@ -6,10 +8,42 @@ from conspire.math.special import (
     rosenbrock,
     sinhc,
 )
+import math
 import numpy as np
 
 ABS_TOL = 1e-10
 EPSILON = 1e-6
+
+
+def test_erf_zero():
+    assert erf(0.0) == 0.0
+
+
+def test_erfc_zero():
+    assert erfc(0.0) == 1.0
+
+
+def test_erf_matches_reference():
+    # conspire==0.6.3's erfc/erfcx overflows for x < -26.7, giving wrong
+    # signs/values (e.g. erf(-30) == 1.0 instead of -1.0); stay well clear
+    # of that region until it's fixed upstream.
+    for x in np.linspace(-6.0, 6.0, 1000):
+        assert np.abs(erf(x) - math.erf(x)) < ABS_TOL
+
+
+def test_erfc_matches_reference():
+    for x in np.linspace(-6.0, 6.0, 1000):
+        assert np.abs(erfc(x) - math.erfc(x)) < ABS_TOL
+
+
+def test_erf_odd_symmetry():
+    for x in np.linspace(0.0, 6.0, 1000):
+        assert np.abs(erf(-x) + erf(x)) < ABS_TOL
+
+
+def test_erfc_relation_to_erf():
+    for x in np.linspace(-6.0, 6.0, 1000):
+        assert np.abs(erfc(x) - (1.0 - erf(x))) < ABS_TOL
 
 
 def test_lambert_w_zero():
