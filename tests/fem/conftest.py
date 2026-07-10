@@ -1,21 +1,24 @@
-from conspire.constitutive.solid.elastic import AlmansiHamel
-from conspire.fem import Block
-from pytest import raises
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).parent))
+
 import numpy as np
+import pytest
 
+_ABS_TOL = 1e-12
+_EPSILON = 1e-6
+_BULK_MODULUS = 13
+_SHEAR_MODULUS = 3
 
-abs_tol = 1e-12
-epsilon = 1e-6
-bulk_modulus = 13
-shear_modulus = 3
-deformation_gradient = np.array(
+_DEFORMATION_GRADIENT = np.array(
     [
         [0.63595746, 0.69157849, 0.71520784],
         [0.80589604, 0.83687323, 0.19312595],
         [0.05387420, 0.86551549, 0.41880244],
     ]
 )
-connectivity = np.array(
+_CONNECTIVITY = np.array(
     [
         [13, 12, 8, 1],
         [10, 3, 0, 8],
@@ -43,7 +46,7 @@ connectivity = np.array(
         [13, 12, 9, 11],
     ]
 )
-reference_coordinates = np.array(
+_REFERENCE_COORDINATES = np.array(
     [
         [0.5, -0.5, 0.5],
         [0.5, 0.5, 0.5],
@@ -61,7 +64,7 @@ reference_coordinates = np.array(
         [0.5, 0.0, 0.0],
     ]
 )
-deformed_coordinates = np.array(
+_DEFORMED_COORDINATES = np.array(
     [
         [0.48419081, -0.52698494, 0.42026988],
         [0.43559430, 0.52696224, 0.54477963],
@@ -79,37 +82,53 @@ deformed_coordinates = np.array(
         [0.52149656, -0.08553510, -0.03187069],
     ]
 )
-affinely_deformed_coordinates = np.zeros(reference_coordinates.shape)
-for i, reference_coordinate in enumerate(reference_coordinates):
-    affinely_deformed_coordinates[i] = deformation_gradient.dot(reference_coordinate)
-
-model = AlmansiHamel(bulk_modulus, shear_modulus)
-
-block = Block(model, connectivity, reference_coordinates)
 
 
-def test_helmholtz_free_energy_undefined():
-    with raises(
-        TypeError,
-        match="The Helmholtz free energy density"
-        + " is undefined for elastic constitutive models.",
-    ):
-        block.helmholtz_free_energy(reference_coordinates)
+@pytest.fixture
+def abs_tol():
+    return _ABS_TOL
 
 
-def test_nodal_forces_zero():
-    assert np.all(block.nodal_forces(reference_coordinates) == 0.0)
+@pytest.fixture
+def epsilon():
+    return _EPSILON
 
 
-def test_nodal_stiffnesses_finite_difference():
-    tan = block.nodal_stiffnesses(deformed_coordinates)
-    for a in range(len(reference_coordinates)):
-        for b in range(len(reference_coordinates)):
-            for i in range(3):
-                for j in range(3):
-                    deformed_coordinates[b, j] += epsilon / 2
-                    d_force = block.nodal_forces(deformed_coordinates)[a, i]
-                    deformed_coordinates[b, j] -= epsilon
-                    d_force -= block.nodal_forces(deformed_coordinates)[a, i]
-                    assert np.abs(tan[a, b, i, j] - d_force / epsilon) < epsilon
-                    deformed_coordinates[b, j] += epsilon / 2
+@pytest.fixture
+def bulk_modulus():
+    return _BULK_MODULUS
+
+
+@pytest.fixture
+def shear_modulus():
+    return _SHEAR_MODULUS
+
+
+@pytest.fixture
+def deformation_gradient():
+    return _DEFORMATION_GRADIENT.copy()
+
+
+@pytest.fixture
+def connectivity():
+    return _CONNECTIVITY.copy()
+
+
+@pytest.fixture
+def reference_coordinates():
+    return _REFERENCE_COORDINATES.copy()
+
+
+@pytest.fixture
+def deformed_coordinates():
+    return _DEFORMED_COORDINATES.copy()
+
+
+@pytest.fixture
+def affinely_deformed_coordinates(deformation_gradient, reference_coordinates):
+    affinely_deformed_coordinates = np.zeros(reference_coordinates.shape)
+    for i, reference_coordinate in enumerate(reference_coordinates):
+        affinely_deformed_coordinates[i] = deformation_gradient.dot(
+            reference_coordinate
+        )
+    return affinely_deformed_coordinates

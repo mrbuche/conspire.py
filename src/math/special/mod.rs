@@ -2,12 +2,34 @@ use conspire::math::{Vector, special};
 use pyo3::prelude::*;
 
 pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(erf, m)?)?;
+    m.add_function(wrap_pyfunction!(erfc, m)?)?;
     m.add_function(wrap_pyfunction!(lambert_w, m)?)?;
     m.add_function(wrap_pyfunction!(langevin, m)?)?;
     m.add_function(wrap_pyfunction!(langevin_derivative, m)?)?;
     m.add_function(wrap_pyfunction!(inverse_langevin, m)?)?;
     m.add_function(wrap_pyfunction!(rosenbrock, m)?)?;
     m.add_function(wrap_pyfunction!(sinhc, m)?)
+}
+
+/// Returns the error function.
+///
+/// $$
+/// \mathrm{erf}(x) = \frac{2}{\sqrt{\pi}}\int_0^x e^{-t^2}\,dt
+/// $$
+#[pyfunction]
+pub fn erf(x: f64) -> f64 {
+    special::erf(x)
+}
+
+/// Returns the complementary error function.
+///
+/// $$
+/// \mathrm{erfc}(x) = 1 - \mathrm{erf}(x)
+/// $$
+#[pyfunction]
+pub fn erfc(x: f64) -> f64 {
+    special::erfc(x)
 }
 
 /// Returns the Lambert W function.

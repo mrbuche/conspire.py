@@ -36,6 +36,7 @@ features = ["pyo3/extension-module"]
 profile = "release"
 
 [tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
 python_files = [
   "*.py"
 ]

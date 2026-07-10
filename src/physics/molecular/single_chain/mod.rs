@@ -56,10 +56,10 @@ macro_rules! single_chain {
             fn new(
                 number_of_links: u8,
                 $($parameter: Scalar),+,
-                ensemble: String,
+                ensemble: &str,
                 temperature: Scalar,
             ) -> Self {
-                let ensemble = match ensemble.as_str() {
+                let ensemble = match ensemble {
                     "isometric" => Ensemble::Isometric(temperature),
                     "isotensional" => Ensemble::Isotensional(temperature),
                     _ => panic!(),
@@ -280,10 +280,10 @@ impl ExtensibleFreelyJointedChain {
         number_of_links: u8,
         link_length: Scalar,
         link_stiffness: Scalar,
-        ensemble: String,
+        ensemble: &str,
         temperature: Scalar,
     ) -> Self {
-        let ensemble = match ensemble.as_str() {
+        let ensemble = match ensemble {
             "isometric" => Ensemble::Isometric(temperature),
             "isotensional" => Ensemble::Isotensional(temperature),
             _ => panic!(),
@@ -465,10 +465,10 @@ impl ExtensibleFreelyRotatingChain {
         link_angle: Scalar,
         link_length: Scalar,
         link_stiffness: Scalar,
-        ensemble: String,
+        ensemble: &str,
         temperature: Scalar,
     ) -> Self {
-        let ensemble = match ensemble.as_str() {
+        let ensemble = match ensemble {
             "isometric" => Ensemble::Isometric(temperature),
             "isotensional" => Ensemble::Isotensional(temperature),
             _ => panic!(),
@@ -515,7 +515,7 @@ impl ExtensibleFreelyRotatingChain {
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone, Debug)]
 enum Potential {
     Harmonic {
@@ -539,13 +539,8 @@ pub struct ArbitraryPotentialFreelyJointedChain {
 #[pymethods]
 impl ArbitraryPotentialFreelyJointedChain {
     #[new]
-    fn new(
-        number_of_links: u8,
-        potential: Potential,
-        ensemble: String,
-        temperature: Scalar,
-    ) -> Self {
-        let ensemble = match ensemble.as_str() {
+    fn new(number_of_links: u8, potential: Potential, ensemble: &str, temperature: Scalar) -> Self {
+        let ensemble = match ensemble {
             "isometric" => Ensemble::Isometric(temperature),
             "isotensional" => Ensemble::Isotensional(temperature),
             _ => panic!(),
@@ -723,8 +718,8 @@ impl ArbitraryPotentialFreelyJointedChain {
     }
 }
 
-#[pyclass]
-#[derive(Clone, Debug)]
+#[pyclass(from_py_object)]
+#[derive(Clone, Copy, Debug)]
 enum ArbitraryDiscretePotential {
     Free(),
     Rigid(Scalar),
@@ -746,20 +741,20 @@ impl ArbitraryDiscreteChain {
     #[new]
     fn new(
         number_of_links: u8,
-        link_potential: ArbitraryDiscretePotential,
-        angular_potential: ArbitraryDiscretePotential,
-        torsional_potential: ArbitraryDiscretePotential,
-        ensemble: String,
+        link_potential: &ArbitraryDiscretePotential,
+        angular_potential: &ArbitraryDiscretePotential,
+        torsional_potential: &ArbitraryDiscretePotential,
+        ensemble: &str,
         temperature: Scalar,
     ) -> Self {
-        let ensemble = match ensemble.as_str() {
+        let ensemble = match ensemble {
             "isometric" => Ensemble::Isometric(temperature),
             "isotensional" => Ensemble::Isotensional(temperature),
             _ => panic!(),
         };
         Self(Adc {
             number_of_links,
-            link_potential: match link_potential {
+            link_potential: match *link_potential {
                 ArbitraryDiscretePotential::Free() => Adp::Free,
                 ArbitraryDiscretePotential::Rigid(rest_value) => Adp::Rigid(rest_value),
                 ArbitraryDiscretePotential::Strong {
@@ -777,7 +772,7 @@ impl ArbitraryDiscreteChain {
                     stiffness,
                 }),
             },
-            angular_potential: match angular_potential {
+            angular_potential: match *angular_potential {
                 ArbitraryDiscretePotential::Free() => Adp::Free,
                 ArbitraryDiscretePotential::Rigid(rest_value) => Adp::Rigid(rest_value),
                 ArbitraryDiscretePotential::Strong {
@@ -795,7 +790,7 @@ impl ArbitraryDiscreteChain {
                     stiffness,
                 }),
             },
-            torsional_potential: match torsional_potential {
+            torsional_potential: match *torsional_potential {
                 ArbitraryDiscretePotential::Free() => Adp::Free,
                 ArbitraryDiscretePotential::Rigid(rest_value) => Adp::Rigid(rest_value),
                 ArbitraryDiscretePotential::Strong {

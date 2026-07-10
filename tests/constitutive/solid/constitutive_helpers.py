@@ -1,41 +1,21 @@
-from conspire.constitutive.solid.hyperelastic import Gent
 import numpy as np
 
 
-abs_tol = 1e-12
-epsilon = 1e-6
-bulk_modulus = 13
-shear_modulus = 3
-extensibility = 23
-zero = np.zeros((3, 3))
-identity = np.eye(3)
-deformation_gradient = np.array(
-    [
-        [0.63595746, 0.69157849, 0.71520784],
-        [0.80589604, 0.83687323, 0.19312595],
-        [0.05387420, 0.86551549, 0.41880244],
-    ]
-)
-simple_shear_small = np.array([[1, epsilon, 0], [0, 1, 0], [0, 0, 1]])
-volumetric_small = identity * (1 + epsilon) ** (1 / 3)
-
-model = Gent(bulk_modulus, shear_modulus, extensibility)
+def assert_str(model, name, extra, bulk_modulus, shear_modulus):
+    expected = f"{name}(bulk_modulus={bulk_modulus}, shear_modulus={shear_modulus}"
+    for key, value in extra.items():
+        expected += f", {key}={value}"
+    expected += ")"
+    assert model.__str__() == expected
 
 
-def test_str():
-    assert (
-        model.__str__()
-        == "Gent("
-        + f"bulk_modulus={bulk_modulus}, shear_modulus={shear_modulus}"
-        + f", extensibility={extensibility})"
-    )
-
-
-def test_helmholtz_free_energy_density_zero():
+def assert_helmholtz_free_energy_density_zero(model, identity):
     assert model.helmholtz_free_energy_density(identity) == 0
 
 
-def test_first_piola_kirchhoff_stress_finite_difference():
+def assert_first_piola_kirchhoff_stress_finite_difference(
+    model, deformation_gradient, epsilon
+):
     stress = model.first_piola_kirchhoff_stress(deformation_gradient)
     for i in range(3):
         for j in range(3):
@@ -47,7 +27,9 @@ def test_first_piola_kirchhoff_stress_finite_difference():
             deformation_gradient[i, j] += epsilon / 2
 
 
-def test_first_piola_kirchhoff_tangent_stiffness_symmetry():
+def assert_first_piola_kirchhoff_tangent_stiffness_symmetry(
+    model, deformation_gradient, abs_tol
+):
     tan = model.first_piola_kirchhoff_tangent_stiffness(deformation_gradient)
     for i in range(3):
         for j in range(3):
@@ -56,19 +38,19 @@ def test_first_piola_kirchhoff_tangent_stiffness_symmetry():
                     assert np.abs(tan[i, j, k, m] - tan[k, m, i, j]) < abs_tol
 
 
-def test_cauchy_stress_zero():
+def assert_cauchy_stress_zero(model, identity, zero):
     assert (model.cauchy_stress(identity) == zero).all()
 
 
-def test_first_piola_kirchhoff_stress_zero():
+def assert_first_piola_kirchhoff_stress_zero(model, identity, zero):
     assert (model.first_piola_kirchhoff_stress(identity) == zero).all()
 
 
-def test_second_piola_kirchhoff_stress_zero():
+def assert_second_piola_kirchhoff_stress_zero(model, identity, zero):
     assert (model.second_piola_kirchhoff_stress(identity) == zero).all()
 
 
-def test_cauchy_stress_symmetry():
+def assert_cauchy_stress_symmetry(model, deformation_gradient, abs_tol):
     assert (
         np.abs(
             model.cauchy_stress(deformation_gradient)
@@ -78,7 +60,9 @@ def test_cauchy_stress_symmetry():
     ).all()
 
 
-def test_cauchy_stress_relate_first_piola_kirchhoff_stress():
+def assert_cauchy_stress_relate_first_piola_kirchhoff_stress(
+    model, deformation_gradient, abs_tol
+):
     assert (
         model.cauchy_stress(deformation_gradient)
         - model.first_piola_kirchhoff_stress(deformation_gradient).dot(
@@ -89,7 +73,9 @@ def test_cauchy_stress_relate_first_piola_kirchhoff_stress():
     ).all()
 
 
-def test_cauchy_stress_relate_second_piola_kirchhoff_stress():
+def assert_cauchy_stress_relate_second_piola_kirchhoff_stress(
+    model, deformation_gradient, abs_tol
+):
     assert (
         model.cauchy_stress(deformation_gradient)
         - deformation_gradient.dot(
@@ -100,14 +86,14 @@ def test_cauchy_stress_relate_second_piola_kirchhoff_stress():
     ).all()
 
 
-def test_shear_modulus():
+def assert_shear_modulus(model, simple_shear_small, epsilon, shear_modulus):
     assert (
         np.abs(model.cauchy_stress(simple_shear_small)[0, 1] / epsilon - shear_modulus)
         < epsilon
     )
 
 
-def test_bulk_modulus():
+def assert_bulk_modulus(model, volumetric_small, epsilon, bulk_modulus):
     assert (
         np.abs(
             model.cauchy_stress(volumetric_small).trace() / 3 / epsilon / bulk_modulus
@@ -117,7 +103,9 @@ def test_bulk_modulus():
     )
 
 
-def test_cauchy_tangent_stiffness_finite_difference():
+def assert_cauchy_tangent_stiffness_finite_difference(
+    model, deformation_gradient, abs_tol, epsilon
+):
     tan = model.cauchy_tangent_stiffness(deformation_gradient)
     for i in range(3):
         for j in range(3):
@@ -132,7 +120,9 @@ def test_cauchy_tangent_stiffness_finite_difference():
                     deformation_gradient[k, m] += epsilon / 2
 
 
-def test_first_piola_kirchhoff_tangent_stiffness_finite_difference():
+def assert_first_piola_kirchhoff_tangent_stiffness_finite_difference(
+    model, deformation_gradient, epsilon
+):
     tan = model.first_piola_kirchhoff_tangent_stiffness(deformation_gradient)
     for i in range(3):
         for j in range(3):
@@ -150,7 +140,9 @@ def test_first_piola_kirchhoff_tangent_stiffness_finite_difference():
                     deformation_gradient[k, m] += epsilon / 2
 
 
-def test_second_piola_kirchhoff_tangent_stiffness_finite_difference():
+def assert_second_piola_kirchhoff_tangent_stiffness_finite_difference(
+    model, deformation_gradient, epsilon
+):
     tan = model.second_piola_kirchhoff_tangent_stiffness(deformation_gradient)
     for i in range(3):
         for j in range(3):
