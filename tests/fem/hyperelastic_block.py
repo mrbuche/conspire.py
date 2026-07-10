@@ -1,4 +1,12 @@
-from conspire.constitutive.solid.hyperelastic import NeoHookean
+from conspire.constitutive.solid.hyperelastic import (
+    ArrudaBoyce,
+    Fung,
+    Gent,
+    Hencky,
+    MooneyRivlin,
+    NeoHookean,
+    SaintVenantKirchhoff,
+)
 from conspire.fem import Block
 from helpers import (
     assert_nodal_forces_finite_difference,
@@ -8,10 +16,26 @@ from helpers import (
 import numpy as np
 import pytest
 
+MODELS = [
+    ("NeoHookean", NeoHookean, {}),
+    ("ArrudaBoyce", ArrudaBoyce, {"number_of_links": 8}),
+    ("Fung", Fung, {"extra_modulus": 1, "exponent": 1}),
+    ("Gent", Gent, {"extensibility": 23}),
+    ("Hencky", Hencky, {}),
+    ("MooneyRivlin", MooneyRivlin, {"extra_modulus": 1}),
+    ("SaintVenantKirchhoff", SaintVenantKirchhoff, {}),
+]
+
+
+@pytest.fixture(params=MODELS, ids=[name for name, _, _ in MODELS])
+def model_case(request):
+    return request.param
+
 
 @pytest.fixture
-def model(bulk_modulus, shear_modulus):
-    return NeoHookean(bulk_modulus, shear_modulus)
+def model(model_case, bulk_modulus, shear_modulus):
+    _, cls, extra = model_case
+    return cls(bulk_modulus, shear_modulus, *extra.values())
 
 
 @pytest.fixture

@@ -4,10 +4,20 @@ from helpers import assert_nodal_forces_zero, assert_nodal_stiffnesses_finite_di
 from pytest import raises
 import pytest
 
+MODELS = [
+    ("AlmansiHamel", AlmansiHamel, {}),
+]
+
+
+@pytest.fixture(params=MODELS, ids=[name for name, _, _ in MODELS])
+def model_case(request):
+    return request.param
+
 
 @pytest.fixture
-def model(bulk_modulus, shear_modulus):
-    return AlmansiHamel(bulk_modulus, shear_modulus)
+def model(model_case, bulk_modulus, shear_modulus):
+    _, cls, extra = model_case
+    return cls(bulk_modulus, shear_modulus, *extra.values())
 
 
 @pytest.fixture
