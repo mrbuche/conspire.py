@@ -72,8 +72,6 @@ def test_sinhc():
 
 
 def test_rosenbrock_zero():
-    # a = 1 is the only nonzero `a` for which x_i = a satisfies both
-    # x_i = a and x_{i+1} = x_i**2 simultaneously, giving a global zero.
     for b in [1.0, 10.0, 100.0]:
         for n in [2, 3, 5]:
             assert rosenbrock([1.0] * n, 1.0, b) == 0.0
