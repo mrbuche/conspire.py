@@ -19,10 +19,7 @@ impl<T: Tensor> PyTensorRank2<T>
 where
     Vec<Vec<Scalar>>: From<T>,
 {
-    pub fn into_pyarray<'py>(
-        self,
-        py: Python<'py>,
-    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+    pub fn into_pyarray(self, py: Python<'_>) -> Result<Bound<'_, PyArray2<Scalar>>, PyErrGlue> {
         Ok(PyArray2::from_vec2(py, &Vec::<Vec<Scalar>>::from(self.0))?)
     }
 }
@@ -39,10 +36,7 @@ impl<T: Tensor> PyTensorRank4<T>
 where
     Vec<Scalar>: From<T>,
 {
-    pub fn into_pyarray<'py>(
-        self,
-        py: Python<'py>,
-    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+    pub fn into_pyarray(self, py: Python<'_>) -> Result<Bound<'_, PyArray4<Scalar>>, PyErrGlue> {
         Ok(PyArray4::from_owned_array(
             py,
             Array::from_shape_vec((3, 3, 3, 3), Vec::<Scalar>::from(self.0))?,
