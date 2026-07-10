@@ -24,9 +24,6 @@ def test_erfc_zero():
 
 
 def test_erf_matches_reference():
-    # conspire==0.6.3's erfc/erfcx overflows for x < -26.7, giving wrong
-    # signs/values (e.g. erf(-30) == 1.0 instead of -1.0); stay well clear
-    # of that region until it's fixed upstream.
     for x in np.linspace(-6.0, 6.0, 1000):
         assert np.abs(erf(x) - math.erf(x)) < ABS_TOL
 
