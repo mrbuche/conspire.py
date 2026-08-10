@@ -10,19 +10,19 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
 name = "conspire"
-version = "0.6.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81025fd2f6798465259375ec7f494813a5adbbb5b1e8562445a485efa158dabb"
-
-[[package]]
-name = "conspire"
 version = "0.6.4"
 dependencies = [
- "conspire 0.6.3",
+ "conspire 0.7.2",
  "ndarray",
  "numpy",
  "pyo3",
 ]
+
+[[package]]
+name = "conspire"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2cb130651a5799c5b076236f3302447c623f25689b091812e36b894d07f807cc"
 
 [[package]]
 name = "heck"
