@@ -16,7 +16,7 @@ checksum = "81025fd2f6798465259375ec7f494813a5adbbb5b1e8562445a485efa158dabb"
 
 [[package]]
 name = "conspire"
-version = "0.6.4"
+version = "0.6.5"
 dependencies = [
  "conspire 0.6.3",
  "ndarray",

@@ -2,7 +2,7 @@
 edition = "2024"
 name = "conspire"
 publish = false
-version = "0.6.4"
+version = "0.6.5"
 
 [lib]
 crate-type = ["cdylib"]
