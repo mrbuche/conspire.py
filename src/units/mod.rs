@@ -1,8 +1,11 @@
 use conspire::{
-    math::{Quantity, Scalar},
+    math::{
+        Current, Quantity, Reference, Scalar, Tensor, TensorRank1Vec, TensorRank2,
+        TensorRank2SparseVec2D, TensorRank4,
+    },
     units::{Energy, Force, ForcePerLength, Length, Stress},
 };
-use ndarray::{ArrayD, IxDyn};
+use ndarray::{ArrayD, Ix2, IxDyn};
 use numpy::{IntoPyArray, PyReadonlyArrayDyn};
 use pyo3::{IntoPyObjectExt, exceptions::PyValueError, prelude::*};
 
@@ -57,21 +60,44 @@ macro_rules! quantity {
             }
         }
         impl $class {
-            pub fn scalar(&self) -> PyResult<Quantity<$unit>> {
-                if self.0.ndim() == 0 {
-                    Ok($unit::$base(self.0[IxDyn(&[])]))
+            pub fn array(&self) -> &ArrayD<Scalar> {
+                &self.0
+            }
+        }
+        impl From<Quantity<$unit>> for $class {
+            fn from(quantity: Quantity<$unit>) -> Self {
+                Self(ArrayD::from_elem(IxDyn(&[]), quantity.value()))
+            }
+        }
+        impl TryFrom<$class> for Quantity<$unit> {
+            type Error = PyErr;
+            fn try_from(quantity: $class) -> PyResult<Self> {
+                if quantity.0.ndim() == 0 {
+                    Ok($unit::$base(quantity.0[IxDyn(&[])]))
                 } else {
                     Err(PyValueError::new_err(concat!("expected a single ", $name)))
                 }
             }
-            pub fn from_scalar(quantity: Quantity<$unit>) -> Self {
-                Self(ArrayD::from_elem(IxDyn(&[]), quantity.value()))
+        }
+        impl<I, J> From<TensorRank2<3, I, J, $unit>> for $class {
+            fn from(tensor: TensorRank2<3, I, J, $unit>) -> Self {
+                Self(ArrayD::from_shape_fn(IxDyn(&[3, 3]), |ix| {
+                    tensor[ix[0]][ix[1]].value()
+                }))
             }
-            pub fn from_array(array: ArrayD<Scalar>) -> Self {
-                Self(array)
+        }
+        impl<I, J, K, L> From<TensorRank4<3, I, J, K, L, $unit>> for $class {
+            fn from(tensor: TensorRank4<3, I, J, K, L, $unit>) -> Self {
+                Self(ArrayD::from_shape_fn(IxDyn(&[3, 3, 3, 3]), |ix| {
+                    tensor[ix[0]][ix[1]][ix[2]][ix[3]].value()
+                }))
             }
-            pub fn array(&self) -> &ArrayD<Scalar> {
-                &self.0
+        }
+        impl<I> From<TensorRank1Vec<3, I, $unit>> for $class {
+            fn from(vector: TensorRank1Vec<3, I, $unit>) -> Self {
+                Self(ArrayD::from_shape_fn(IxDyn(&[vector.len(), 3]), |ix| {
+                    vector[ix[0]][ix[1]].value()
+                }))
             }
         }
     };
@@ -119,37 +145,44 @@ quantity!(
     ksi / in_ksi,
 );
 
-pub trait Parameter: Sized {
-    type Inner;
-    fn into_inner(self) -> PyResult<Self::Inner>;
-    fn from_inner(inner: Self::Inner) -> Self;
+impl From<&TensorRank2SparseVec2D<3, Current, Current, ForcePerLength>> for PyForcePerLength {
+    fn from(stiffnesses: &TensorRank2SparseVec2D<3, Current, Current, ForcePerLength>) -> Self {
+        let nodes = stiffnesses.len();
+        let mut array = ArrayD::<Scalar>::zeros(IxDyn(&[nodes, nodes, 3, 3]));
+        stiffnesses.iter().enumerate().for_each(|(a, row)| {
+            row.entries().for_each(|(b, entry)| {
+                (0..3).for_each(|i| {
+                    (0..3).for_each(|j| array[IxDyn(&[a, b, i, j])] = entry[i][j].value())
+                })
+            })
+        });
+        Self(array)
+    }
 }
 
-impl Parameter for Scalar {
-    type Inner = Scalar;
-    fn into_inner(self) -> PyResult<Scalar> {
-        Ok(self)
-    }
-    fn from_inner(inner: Scalar) -> Scalar {
-        inner
+fn nodes(length: &PyLength) -> PyResult<Vec<[Scalar; 3]>> {
+    match length.0.view().into_dimensionality::<Ix2>() {
+        Ok(array) if array.ncols() == 3 => Ok(array
+            .rows()
+            .into_iter()
+            .map(|node| [node[0], node[1], node[2]])
+            .collect()),
+        _ => Err(PyValueError::new_err(
+            "expected nodal coordinates with shape (nodes, 3)",
+        )),
     }
 }
 
-macro_rules! parameter {
-    ($class: ident, $unit: ident) => {
-        impl Parameter for $class {
-            type Inner = Quantity<$unit>;
-            fn into_inner(self) -> PyResult<Quantity<$unit>> {
-                self.scalar()
-            }
-            fn from_inner(inner: Quantity<$unit>) -> Self {
-                Self::from_scalar(inner)
-            }
-        }
-    };
+impl TryFrom<&PyLength> for TensorRank1Vec<3, Current, Length> {
+    type Error = PyErr;
+    fn try_from(length: &PyLength) -> PyResult<Self> {
+        Ok(nodes(length)?.into())
+    }
 }
-parameter!(PyEnergy, Energy);
-parameter!(PyForce, Force);
-parameter!(PyForcePerLength, ForcePerLength);
-parameter!(PyLength, Length);
-parameter!(PyStress, Stress);
+
+impl TryFrom<&PyLength> for TensorRank1Vec<3, Reference, Length> {
+    type Error = PyErr;
+    fn try_from(length: &PyLength) -> PyResult<Self> {
+        Ok(nodes(length)?.into())
+    }
+}

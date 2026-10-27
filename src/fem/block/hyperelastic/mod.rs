@@ -3,9 +3,9 @@ use crate::{
     constitutive::solid::hyperelastic as constitutive,
     fem::{
         block::elastic::{G, M, N, P},
-        call_method, coordinates, stiffnesses,
+        call_method,
     },
-    units::{Parameter, PyEnergy, PyForce, PyForcePerLength, PyLength, PyStress},
+    units::{PyEnergy, PyForce, PyForcePerLength, PyLength, PyStress},
 };
 use conspire::{
     fem::{
@@ -15,7 +15,6 @@ use conspire::{
     },
     mechanics::Scalar,
 };
-use ndarray::{ArrayD, IxDyn};
 use pyo3::prelude::*;
 
 type LinearTetrahedron = Tetrahedron<G>;
@@ -142,10 +141,10 @@ macro_rules! hyperelastic {
                 Ok(Self {
                     block: Block::from((
                         conspire::constitutive::solid::hyperelastic::$model {
-                            $($parameter: $parameter.into_inner()?),+
+                            $($parameter: $parameter.try_into()?),+
                         },
                         connectivity,
-                        &NodalReferenceCoordinates::from(coordinates(&reference_nodal_coordinates)?),
+                        &NodalReferenceCoordinates::try_from(&reference_nodal_coordinates)?,
                     )),
                 })
             }
@@ -153,30 +152,25 @@ macro_rules! hyperelastic {
                 &self,
                 nodal_coordinates: PyLength,
             ) -> Result<PyEnergy, PyErrGlue> {
-                Ok(PyEnergy::from_scalar(self.block.helmholtz_free_energy(
-                    &NodalCoordinates::from(coordinates(&nodal_coordinates)?),
-                )?))
+                Ok(self
+                    .block
+                    .helmholtz_free_energy(&NodalCoordinates::try_from(&nodal_coordinates)?)?
+                    .into())
             }
             fn nodal_forces(&self, nodal_coordinates: PyLength) -> Result<PyForce, PyErrGlue> {
-                let forces: Vec<[Scalar; 3]> = self
+                Ok(self
                     .block
-                    .nodal_forces(&NodalCoordinates::from(coordinates(&nodal_coordinates)?))?
-                    .into();
-                Ok(PyForce::from_array(ArrayD::from_shape_vec(
-                    IxDyn(&[forces.len(), 3]),
-                    forces.into_iter().flatten().collect(),
-                )?))
+                    .nodal_forces(&NodalCoordinates::try_from(&nodal_coordinates)?)?
+                    .into())
             }
             fn nodal_stiffnesses(
                 &self,
                 nodal_coordinates: PyLength,
             ) -> Result<PyForcePerLength, PyErrGlue> {
-                Ok(stiffnesses(
-                    nodal_coordinates.array().shape().first().copied().unwrap_or(0),
-                    &self
-                        .block
-                        .nodal_stiffnesses(&NodalCoordinates::from(coordinates(&nodal_coordinates)?))?,
-                ))
+                Ok((&self
+                    .block
+                    .nodal_stiffnesses(&NodalCoordinates::try_from(&nodal_coordinates)?)?)
+                    .into())
             }
         }
     };

@@ -1,4 +1,5 @@
 from conspire.constitutive.solid.hyperelastic import NeoHookean
+from conspire.fem import Block
 from conspire.units import Energy, Force, ForcePerLength, Length, Stress
 import numpy as np
 import pytest
@@ -43,6 +44,14 @@ def test_model_parameter_reads_back_in_any_scale():
     model = NeoHookean(Stress.megapascals(13.0), Stress.megapascals(3.0))
     assert model.bulk_modulus.in_pascals() == 13e6
     assert model.shear_modulus.in_kilopascals() == 3e3
+
+
+def test_nodal_coordinates_must_have_three_columns():
+    model = NeoHookean(Stress.pascals(13.0), Stress.pascals(3.0))
+    tetrahedron = np.array([[0.0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    block = Block(model, [[0, 1, 2, 3]], Length.meters(tetrahedron))
+    with pytest.raises(TypeError, match=r"shape \(nodes, 3\)"):
+        block.nodal_forces(Length.meters(tetrahedron[:, :2]))
 
 
 def test_stress_output_is_a_quantity():

@@ -9,34 +9,7 @@ use crate::constitutive::solid::{
 };
 use crate::units::{PyEnergy, PyForce, PyForcePerLength, PyLength};
 use block::{elastic::ElasticBlock, hyperelastic::HyperelasticBlock};
-use conspire::{fem::solid::NodalStiffnessesSolid, math::Tensor, mechanics::Scalar};
-use ndarray::{ArrayD, Ix2, IxDyn};
-use pyo3::{exceptions::PyValueError, prelude::*};
-
-pub fn coordinates(length: &PyLength) -> PyResult<Vec<[Scalar; 3]>> {
-    match length.array().view().into_dimensionality::<Ix2>() {
-        Ok(array) if array.ncols() == 3 => Ok(array
-            .rows()
-            .into_iter()
-            .map(|node| [node[0], node[1], node[2]])
-            .collect()),
-        _ => Err(PyValueError::new_err(
-            "expected nodal coordinates with shape (nodes, 3)",
-        )),
-    }
-}
-
-pub fn stiffnesses(nodes: usize, stiffnesses: &NodalStiffnessesSolid<3>) -> PyForcePerLength {
-    let mut array = ArrayD::<Scalar>::zeros(IxDyn(&[nodes, nodes, 3, 3]));
-    stiffnesses.iter().enumerate().for_each(|(a, row)| {
-        row.entries().for_each(|(b, entry)| {
-            (0..3).for_each(|i| {
-                (0..3).for_each(|j| array[IxDyn(&[a, b, i, j])] = entry[i][j].value())
-            })
-        })
-    });
-    PyForcePerLength::from_array(array)
-}
+use pyo3::prelude::*;
 
 pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Block>()
@@ -45,10 +18,9 @@ pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
 macro_rules! call_method {
     ($model: ident, $py: ident, $name: literal, $nodal_coordinates: ident) => {
         Ok($model
-            .call_method1($py, $name, ($nodal_coordinates,))
-            .unwrap()
+            .call_method1($py, $name, ($nodal_coordinates,))?
             .extract($py)
-            .unwrap())
+            .map_err(PyErr::from)?)
     };
 }
 pub(crate) use call_method;

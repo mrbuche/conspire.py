@@ -29,8 +29,7 @@ macro_rules! elastic {
     ($model: ident, $($parameter: ident : $ty: ty),+ $(,)?) => {
         use crate::{
             PyErrGlue,
-            math::{PyTensorRank2, PyTensorRank4},
-            units::{Parameter, PyStress},
+            units::PyStress,
             constitutive::solid::elastic::shared
         };
         use conspire::{
@@ -50,7 +49,7 @@ macro_rules! elastic {
             fn new($($parameter: $ty),+) -> PyResult<Self> {
                 Ok(Self (
                     Inner {
-                        $($parameter: $parameter.into_inner()?),+
+                        $($parameter: $parameter.try_into()?),+
                     }
                 ))
             }
@@ -58,7 +57,7 @@ macro_rules! elastic {
                 /// @private
                 #[getter]
                 pub fn $parameter(&self) -> $ty {
-                    <$ty>::from_inner(self.0.$parameter())
+                    self.0.$parameter().into()
                 }
             )+
             #[doc = include_str!("cauchy_stress.md")]
@@ -66,54 +65,54 @@ macro_rules! elastic {
                 &self,
                 deformation_gradient: [[Scalar; 3]; 3],
             ) -> Result<PyStress, PyErrGlue> {
-                Ok(PyStress::from_array(PyTensorRank2::from(self.0.cauchy_stress(
+                Ok(self.0.cauchy_stress(
                         &deformation_gradient.into()
-                    )?).into_array()?))
+                    )?.into())
             }
             #[doc = include_str!("cauchy_tangent_stiffness.md")]
             fn cauchy_tangent_stiffness(
                 &self,
                 deformation_gradient: [[Scalar; 3]; 3],
             ) -> Result<PyStress, PyErrGlue> {
-                Ok(PyStress::from_array(PyTensorRank4::from(self.0.cauchy_tangent_stiffness(
+                Ok(self.0.cauchy_tangent_stiffness(
                         &deformation_gradient.into()
-                    )?).into_array()?))
+                    )?.into())
             }
             #[doc = include_str!("first_piola_kirchhoff_stress.md")]
             fn first_piola_kirchhoff_stress(
                 &self,
                 deformation_gradient: [[Scalar; 3]; 3],
             ) -> Result<PyStress, PyErrGlue> {
-                Ok(PyStress::from_array(PyTensorRank2::from(self.0.first_piola_kirchhoff_stress(
+                Ok(self.0.first_piola_kirchhoff_stress(
                         &deformation_gradient.into()
-                    )?).into_array()?))
+                    )?.into())
             }
             #[doc = include_str!("first_piola_kirchhoff_tangent_stiffness.md")]
             fn first_piola_kirchhoff_tangent_stiffness(
                 &self,
                 deformation_gradient: [[Scalar; 3]; 3],
             ) -> Result<PyStress, PyErrGlue> {
-                Ok(PyStress::from_array(PyTensorRank4::from(self.0.first_piola_kirchhoff_tangent_stiffness(
+                Ok(self.0.first_piola_kirchhoff_tangent_stiffness(
                         &deformation_gradient.into()
-                    )?).into_array()?))
+                    )?.into())
             }
             #[doc = include_str!("second_piola_kirchhoff_stress.md")]
             fn second_piola_kirchhoff_stress(
                 &self,
                 deformation_gradient: [[Scalar; 3]; 3],
             ) -> Result<PyStress, PyErrGlue> {
-                Ok(PyStress::from_array(PyTensorRank2::from(self.0.second_piola_kirchhoff_stress(
+                Ok(self.0.second_piola_kirchhoff_stress(
                         &deformation_gradient.into()
-                    )?).into_array()?))
+                    )?.into())
             }
             #[doc = include_str!("second_piola_kirchhoff_tangent_stiffness.md")]
             fn second_piola_kirchhoff_tangent_stiffness(
                 &self,
                 deformation_gradient: [[Scalar; 3]; 3],
             ) -> Result<PyStress, PyErrGlue> {
-                Ok(PyStress::from_array(PyTensorRank4::from(self.0.second_piola_kirchhoff_tangent_stiffness(
+                Ok(self.0.second_piola_kirchhoff_tangent_stiffness(
                         &deformation_gradient.into()
-                    )?).into_array()?))
+                    )?.into())
             }
         }
     };
