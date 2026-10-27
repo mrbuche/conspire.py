@@ -5,7 +5,6 @@ use crate::{
     units::{PyForce, PyForcePerLength, PyLength},
 };
 use conspire::fem::{
-    NodalCoordinates, NodalReferenceCoordinates,
     block::{Block, element::linear::Tetrahedron as LinearTetrahedron},
     solid::elastic::ElasticElements,
 };
@@ -89,20 +88,21 @@ impl AlmansiHamelEulerian {
         reference_nodal_coordinates: PyLength,
     ) -> PyResult<Self> {
         Ok(Self {
-            block: Block::from((
+            block: (
                 conspire::constitutive::solid::elastic::AlmansiHamelEulerian {
                     bulk_modulus: bulk_modulus.try_into()?,
                     shear_modulus: shear_modulus.try_into()?,
                 },
                 connectivity,
-                &NodalReferenceCoordinates::try_from(&reference_nodal_coordinates)?,
-            )),
+                &(&reference_nodal_coordinates).try_into()?,
+            )
+                .into(),
         })
     }
     fn nodal_forces(&self, nodal_coordinates: PyLength) -> Result<PyForce, PyErrGlue> {
         Ok(self
             .block
-            .nodal_forces(&NodalCoordinates::try_from(&nodal_coordinates)?)?
+            .nodal_forces(&(&nodal_coordinates).try_into()?)?
             .into())
     }
     fn nodal_stiffnesses(
@@ -111,7 +111,7 @@ impl AlmansiHamelEulerian {
     ) -> Result<PyForcePerLength, PyErrGlue> {
         Ok((&self
             .block
-            .nodal_stiffnesses(&NodalCoordinates::try_from(&nodal_coordinates)?)?)
+            .nodal_stiffnesses(&(&nodal_coordinates).try_into()?)?)
             .into())
     }
 }

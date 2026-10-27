@@ -9,7 +9,6 @@ use crate::{
 };
 use conspire::{
     fem::{
-        NodalCoordinates, NodalReferenceCoordinates,
         block::{Block, element::linear::Tetrahedron},
         solid::{elastic::ElasticElements, hyperelastic::HyperelasticElements},
     },
@@ -139,13 +138,14 @@ macro_rules! hyperelastic {
                 reference_nodal_coordinates: PyLength,
             ) -> PyResult<Self> {
                 Ok(Self {
-                    block: Block::from((
+                    block: (
                         conspire::constitutive::solid::hyperelastic::$model {
                             $($parameter: $parameter.try_into()?),+
                         },
                         connectivity,
-                        &NodalReferenceCoordinates::try_from(&reference_nodal_coordinates)?,
-                    )),
+                        &(&reference_nodal_coordinates).try_into()?,
+                    )
+                        .into(),
                 })
             }
             fn helmholtz_free_energy(
@@ -154,13 +154,13 @@ macro_rules! hyperelastic {
             ) -> Result<PyEnergy, PyErrGlue> {
                 Ok(self
                     .block
-                    .helmholtz_free_energy(&NodalCoordinates::try_from(&nodal_coordinates)?)?
+                    .helmholtz_free_energy(&(&nodal_coordinates).try_into()?)?
                     .into())
             }
             fn nodal_forces(&self, nodal_coordinates: PyLength) -> Result<PyForce, PyErrGlue> {
                 Ok(self
                     .block
-                    .nodal_forces(&NodalCoordinates::try_from(&nodal_coordinates)?)?
+                    .nodal_forces(&(&nodal_coordinates).try_into()?)?
                     .into())
             }
             fn nodal_stiffnesses(
@@ -169,7 +169,7 @@ macro_rules! hyperelastic {
             ) -> Result<PyForcePerLength, PyErrGlue> {
                 Ok((&self
                     .block
-                    .nodal_stiffnesses(&NodalCoordinates::try_from(&nodal_coordinates)?)?)
+                    .nodal_stiffnesses(&(&nodal_coordinates).try_into()?)?)
                     .into())
             }
         }
