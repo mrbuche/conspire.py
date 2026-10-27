@@ -7,8 +7,9 @@ from conspire.constitutive.solid.hyperelastic import (
     NeoHookean,
     SaintVenantKirchhoff,
 )
-from conspire.fem import Block
 from helpers import (
+    build,
+    make_block,
     assert_nodal_forces_finite_difference,
     assert_nodal_forces_zero,
     assert_nodal_stiffnesses_finite_difference,
@@ -35,12 +36,12 @@ def model_case(request):
 @pytest.fixture
 def model(model_case, bulk_modulus, shear_modulus):
     _, cls, extra = model_case
-    return cls(bulk_modulus, shear_modulus, *extra.values())
+    return build(cls, bulk_modulus, shear_modulus, extra)
 
 
 @pytest.fixture
 def block(model, connectivity, reference_coordinates):
-    return Block(model, connectivity, reference_coordinates)
+    return make_block(model, connectivity, reference_coordinates)
 
 
 def test_helmholtz_free_energy_zero(block, reference_coordinates):

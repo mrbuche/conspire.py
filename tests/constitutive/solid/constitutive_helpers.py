@@ -1,10 +1,44 @@
+from conspire.units import Stress
 import numpy as np
 
 
+class InPascals:
+    """A model that takes stresses in pascals and returns them in pascals."""
+
+    def __init__(self, model):
+        self._model = model
+
+    def __getattr__(self, name):
+        attribute = getattr(self._model, name)
+        if callable(attribute):
+            return lambda *args: self._unwrap(attribute(*args))
+        return self._unwrap(attribute)
+
+    def __str__(self):
+        return str(self._model)
+
+    @staticmethod
+    def _unwrap(value):
+        return value.in_pascals() if isinstance(value, Stress) else value
+
+
+def build(cls, bulk_modulus, shear_modulus, extra):
+    parameters = [
+        Stress.pascals(value) if key.endswith("modulus") else value
+        for key, value in extra.items()
+    ]
+    return InPascals(
+        cls(Stress.pascals(bulk_modulus), Stress.pascals(shear_modulus), *parameters)
+    )
+
+
 def assert_str(model, name, extra, bulk_modulus, shear_modulus):
-    expected = f"{name}(bulk_modulus={bulk_modulus}, shear_modulus={shear_modulus}"
+    expected = (
+        f"{name}(bulk_modulus={float(bulk_modulus)}, "
+        + f"shear_modulus={float(shear_modulus)}"
+    )
     for key, value in extra.items():
-        expected += f", {key}={value}"
+        expected += f", {key}={float(value)}"
     expected += ")"
     assert model.__str__() == expected
 

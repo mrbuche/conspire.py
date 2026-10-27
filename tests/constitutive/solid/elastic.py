@@ -1,5 +1,6 @@
-from conspire.constitutive.solid.elastic import AlmansiHamel
+from conspire.constitutive.solid.elastic import AlmansiHamelEulerian
 from constitutive_helpers import (
+    build,
     assert_bulk_modulus,
     assert_cauchy_stress_relate_first_piola_kirchhoff_stress,
     assert_cauchy_stress_relate_second_piola_kirchhoff_stress,
@@ -16,7 +17,7 @@ from constitutive_helpers import (
 import pytest
 
 MODELS = [
-    ("AlmansiHamel", AlmansiHamel, {}),
+    ("AlmansiHamelEulerian", AlmansiHamelEulerian, {}),
 ]
 
 
@@ -28,7 +29,7 @@ def model_case(request):
 @pytest.fixture
 def model(model_case, bulk_modulus, shear_modulus):
     _, cls, extra = model_case
-    return cls(bulk_modulus, shear_modulus, *extra.values())
+    return build(cls, bulk_modulus, shear_modulus, extra)
 
 
 def test_str(model, model_case, bulk_modulus, shear_modulus):

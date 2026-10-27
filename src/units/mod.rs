@@ -53,7 +53,7 @@ macro_rules! quantity {
                 }
             )+
             fn __repr__(&self) -> String {
-                format!(concat!($name, "({:?} in the base scale)"), self.0)
+                format!(concat!($name, ".", stringify!($base), "({})"), self.0)
             }
         }
         impl $class {
