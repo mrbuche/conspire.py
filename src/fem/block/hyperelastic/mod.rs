@@ -3,25 +3,22 @@ use crate::{
     constitutive::solid::hyperelastic as constitutive,
     fem::{
         block::elastic::{G, M, N, P},
-        call_method,
+        call_method, coordinates, stiffnesses,
     },
+    units::{Parameter, PyEnergy, PyForce, PyForcePerLength, PyLength, PyStress},
 };
 use conspire::{
     fem::{
         NodalCoordinates, NodalReferenceCoordinates,
-        block::{
-            Block, Connectivity,
-            element::linear::Tetrahedron as LinearTetrahedron,
-            solid::{
-                elastic::ElasticFiniteElementBlock, hyperelastic::HyperelasticFiniteElementBlock,
-            },
-        },
+        block::{Block, element::linear::Tetrahedron},
+        solid::{elastic::ElasticElements, hyperelastic::HyperelasticElements},
     },
     mechanics::Scalar,
 };
-use ndarray::Array;
-use numpy::{PyArray2, PyArray4};
+use ndarray::{ArrayD, IxDyn};
 use pyo3::prelude::*;
+
+type LinearTetrahedron = Tetrahedron<G>;
 
 #[pyclass]
 pub enum HyperelasticBlock {
@@ -67,7 +64,7 @@ macro_rules! hyperelastic_block_inner {
             $($model.getattr(stringify!($parameter))?.extract()?),+,
             $connectivity,
             $reference_nodal_coordinates,
-        ))?))
+        )?)?))
     }
 }
 
@@ -85,8 +82,8 @@ impl HyperelasticBlock {
     fn new(
         py: Python,
         model: HyperelasticModel,
-        connectivity: Connectivity<N>,
-        reference_nodal_coordinates: Vec<[Scalar; 3]>,
+        connectivity: Vec<[usize; N]>,
+        reference_nodal_coordinates: PyLength,
     ) -> Result<Self, PyErr> {
         hyperelastic_block!(
             py,
@@ -112,29 +109,25 @@ impl HyperelasticBlock {
     fn helmholtz_free_energy(
         &self,
         py: Python,
-        nodal_coordinates: Vec<[Scalar; 3]>,
-    ) -> Result<Scalar, PyErrGlue> {
+        nodal_coordinates: PyLength,
+    ) -> Result<PyEnergy, PyErrGlue> {
         match_model!(self, py, "helmholtz_free_energy", nodal_coordinates)
     }
-    fn nodal_forces<'py>(
-        &self,
-        py: Python<'py>,
-        nodal_coordinates: Vec<[Scalar; 3]>,
-    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+    fn nodal_forces(&self, py: Python, nodal_coordinates: PyLength) -> Result<PyForce, PyErrGlue> {
         match_model!(self, py, "nodal_forces", nodal_coordinates)
     }
-    fn nodal_stiffnesses<'py>(
+    fn nodal_stiffnesses(
         &self,
-        py: Python<'py>,
-        nodal_coordinates: Vec<[Scalar; 3]>,
-    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+        py: Python,
+        nodal_coordinates: PyLength,
+    ) -> Result<PyForcePerLength, PyErrGlue> {
         match_model!(self, py, "nodal_stiffnesses", nodal_coordinates)
     }
 }
 
 macro_rules! hyperelastic {
-    ($element: ident, $n: literal, $model: ident, $($parameter: ident),+ $(,)?) => {
-        #[pyclass]
+    ($element: ident, $n: literal, $model: ident, $($parameter: ident : $ty: ty),+ $(,)?) => {
+        #[pyclass(unsendable)]
         pub struct $model {
             block: Block<conspire::constitutive::solid::hyperelastic::$model, $element, G, M, $n, P>,
         }
@@ -142,53 +135,47 @@ macro_rules! hyperelastic {
         impl $model {
             #[new]
             pub fn new(
-                $($parameter: Scalar),+,
-                connectivity: Connectivity<$n>,
-                reference_nodal_coordinates: Vec<[Scalar; 3]>,
-            ) -> Self {
-                Self {
+                $($parameter: $ty),+,
+                connectivity: Vec<[usize; $n]>,
+                reference_nodal_coordinates: PyLength,
+            ) -> PyResult<Self> {
+                Ok(Self {
                     block: Block::from((
                         conspire::constitutive::solid::hyperelastic::$model {
-                            $($parameter),+
+                            $($parameter: $parameter.into_inner()?),+
                         },
                         connectivity,
-                        NodalReferenceCoordinates::from(reference_nodal_coordinates),
+                        &NodalReferenceCoordinates::from(coordinates(&reference_nodal_coordinates)?),
                     )),
-                }
+                })
             }
             fn helmholtz_free_energy(
                 &self,
-                nodal_coordinates: Vec<[Scalar; 3]>,
-            ) -> Result<Scalar, PyErrGlue> {
-                Ok(self
-                    .block
-                    .helmholtz_free_energy(&NodalCoordinates::from(nodal_coordinates))?)
+                nodal_coordinates: PyLength,
+            ) -> Result<PyEnergy, PyErrGlue> {
+                Ok(PyEnergy::from_scalar(self.block.helmholtz_free_energy(
+                    &NodalCoordinates::from(coordinates(&nodal_coordinates)?),
+                )?))
             }
-            fn nodal_forces<'py>(
-                &self,
-                py: Python<'py>,
-                nodal_coordinates: Vec<[Scalar; 3]>,
-            ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
-                let forces: Vec<Vec<Scalar>> = self
+            fn nodal_forces(&self, nodal_coordinates: PyLength) -> Result<PyForce, PyErrGlue> {
+                let forces: Vec<[Scalar; 3]> = self
                     .block
-                    .nodal_forces(&NodalCoordinates::from(nodal_coordinates))?
+                    .nodal_forces(&NodalCoordinates::from(coordinates(&nodal_coordinates)?))?
                     .into();
-                Ok(PyArray2::from_vec2(py, &forces)?)
+                Ok(PyForce::from_array(ArrayD::from_shape_vec(
+                    IxDyn(&[forces.len(), 3]),
+                    forces.into_iter().flatten().collect(),
+                )?))
             }
-            fn nodal_stiffnesses<'py>(
+            fn nodal_stiffnesses(
                 &self,
-                py: Python<'py>,
-                nodal_coordinates: Vec<[Scalar; 3]>,
-            ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
-                let nodes = nodal_coordinates.len();
-                Ok(PyArray4::from_owned_array(
-                    py,
-                    Array::from_shape_vec(
-                        (nodes, nodes, 3, 3),
-                        self.block
-                            .nodal_stiffnesses(&NodalCoordinates::from(nodal_coordinates))?
-                            .into(),
-                    )?,
+                nodal_coordinates: PyLength,
+            ) -> Result<PyForcePerLength, PyErrGlue> {
+                Ok(stiffnesses(
+                    nodal_coordinates.array().shape().first().copied().unwrap_or(0),
+                    &self
+                        .block
+                        .nodal_stiffnesses(&NodalCoordinates::from(coordinates(&nodal_coordinates)?))?,
                 ))
             }
         }
@@ -199,47 +186,53 @@ hyperelastic!(
     LinearTetrahedron,
     4,
     ArrudaBoyce,
-    bulk_modulus,
-    shear_modulus,
-    number_of_links,
+    bulk_modulus: PyStress,
+    shear_modulus: PyStress,
+    number_of_links: Scalar,
 );
 hyperelastic!(
     LinearTetrahedron,
     4,
     Fung,
-    bulk_modulus,
-    shear_modulus,
-    extra_modulus,
-    exponent,
+    bulk_modulus: PyStress,
+    shear_modulus: PyStress,
+    extra_modulus: PyStress,
+    exponent: Scalar,
 );
 hyperelastic!(
     LinearTetrahedron,
     4,
     Gent,
-    bulk_modulus,
-    shear_modulus,
-    extensibility,
+    bulk_modulus: PyStress,
+    shear_modulus: PyStress,
+    extensibility: Scalar,
 );
-hyperelastic!(LinearTetrahedron, 4, Hencky, bulk_modulus, shear_modulus,);
+hyperelastic!(
+    LinearTetrahedron,
+    4,
+    Hencky,
+    bulk_modulus: PyStress,
+    shear_modulus: PyStress,
+);
 hyperelastic!(
     LinearTetrahedron,
     4,
     MooneyRivlin,
-    bulk_modulus,
-    shear_modulus,
-    extra_modulus,
+    bulk_modulus: PyStress,
+    shear_modulus: PyStress,
+    extra_modulus: PyStress,
 );
 hyperelastic!(
     LinearTetrahedron,
     4,
     NeoHookean,
-    bulk_modulus,
-    shear_modulus,
+    bulk_modulus: PyStress,
+    shear_modulus: PyStress,
 );
 hyperelastic!(
     LinearTetrahedron,
     4,
     SaintVenantKirchhoff,
-    bulk_modulus,
-    shear_modulus,
+    bulk_modulus: PyStress,
+    shear_modulus: PyStress,
 );

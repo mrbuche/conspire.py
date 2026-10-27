@@ -3,8 +3,7 @@ mod special;
 
 use crate::PyErrGlue;
 use conspire::math::{Scalar, Tensor};
-use ndarray::Array;
-use numpy::{PyArray2, PyArray4};
+use ndarray::{ArrayD, IxDyn};
 use pyo3::{Bound, prelude::*};
 
 pub struct PyTensorRank2<T: Tensor>(T);
@@ -19,8 +18,14 @@ impl<T: Tensor> PyTensorRank2<T>
 where
     Vec<Vec<Scalar>>: From<T>,
 {
-    pub fn into_pyarray(self, py: Python<'_>) -> Result<Bound<'_, PyArray2<Scalar>>, PyErrGlue> {
-        Ok(PyArray2::from_vec2(py, &Vec::<Vec<Scalar>>::from(self.0))?)
+    pub fn into_array(self) -> Result<ArrayD<Scalar>, PyErrGlue> {
+        Ok(ArrayD::from_shape_vec(
+            IxDyn(&[3, 3]),
+            Vec::<Vec<Scalar>>::from(self.0)
+                .into_iter()
+                .flatten()
+                .collect(),
+        )?)
     }
 }
 
@@ -36,11 +41,11 @@ impl<T: Tensor> PyTensorRank4<T>
 where
     Vec<Scalar>: From<T>,
 {
-    pub fn into_pyarray(self, py: Python<'_>) -> Result<Bound<'_, PyArray4<Scalar>>, PyErrGlue> {
-        Ok(PyArray4::from_owned_array(
-            py,
-            Array::from_shape_vec((3, 3, 3, 3), Vec::<Scalar>::from(self.0))?,
-        ))
+    pub fn into_array(self) -> Result<ArrayD<Scalar>, PyErrGlue> {
+        Ok(ArrayD::from_shape_vec(
+            IxDyn(&[3, 3, 3, 3]),
+            Vec::<Scalar>::from(self.0),
+        )?)
     }
 }
 

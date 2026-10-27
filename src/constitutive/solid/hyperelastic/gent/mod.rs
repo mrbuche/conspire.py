@@ -1,1 +1,1 @@
-super::hyperelastic!(Gent, bulk_modulus, shear_modulus, extensibility,);
+super::hyperelastic!(Gent, bulk_modulus: PyStress, shear_modulus: PyStress, extensibility: Scalar,);

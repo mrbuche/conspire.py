@@ -1,1 +1,1 @@
-super::hyperelastic!(Hencky, bulk_modulus, shear_modulus,);
+super::hyperelastic!(Hencky, bulk_modulus: PyStress, shear_modulus: PyStress,);

@@ -1,16 +1,18 @@
-use crate::{PyErrGlue, constitutive::solid::elastic as constitutive, fem::call_method};
+use crate::{
+    PyErrGlue,
+    constitutive::solid::elastic as constitutive,
+    fem::{call_method, coordinates, stiffnesses},
+    units::{Parameter, PyForce, PyForcePerLength, PyLength},
+};
 use conspire::{
     fem::{
         NodalCoordinates, NodalReferenceCoordinates,
-        block::{
-            Block, Connectivity, element::linear::Tetrahedron as LinearTetrahedron,
-            solid::elastic::ElasticFiniteElementBlock,
-        },
+        block::{Block, element::linear::Tetrahedron as LinearTetrahedron},
+        solid::elastic::ElasticElements,
     },
     mechanics::Scalar,
 };
-use ndarray::Array;
-use numpy::{PyArray2, PyArray4};
+use ndarray::{ArrayD, IxDyn};
 use pyo3::prelude::*;
 
 pub const G: usize = 1;
@@ -20,12 +22,12 @@ pub const P: usize = N;
 
 #[pyclass]
 pub enum ElasticBlock {
-    AlmansiHamel(Py<AlmansiHamel>),
+    AlmansiHamelEulerian(Py<AlmansiHamelEulerian>),
 }
 
 #[derive(FromPyObject)]
 enum ElasticModel<'py> {
-    AlmansiHamel(Bound<'py, constitutive::AlmansiHamel>),
+    AlmansiHamelEulerian(Bound<'py, constitutive::AlmansiHamelEulerian>),
 }
 
 #[pymethods]
@@ -34,96 +36,97 @@ impl ElasticBlock {
     fn new(
         py: Python,
         model: ElasticModel,
-        connectivity: Connectivity<N>,
-        reference_nodal_coordinates: Vec<[Scalar; 3]>,
+        connectivity: Vec<[usize; N]>,
+        reference_nodal_coordinates: PyLength,
     ) -> Result<Self, PyErr> {
         match model {
-            ElasticModel::AlmansiHamel(model) => {
-                let bulk_modulus: Scalar = model.getattr("bulk_modulus")?.extract()?;
-                let shear_modulus: Scalar = model.getattr("shear_modulus")?.extract()?;
-                let block = AlmansiHamel::new(
-                    bulk_modulus,
-                    shear_modulus,
+            ElasticModel::AlmansiHamelEulerian(model) => {
+                let block = AlmansiHamelEulerian::new(
+                    model.getattr("bulk_modulus")?.extract()?,
+                    model.getattr("shear_modulus")?.extract()?,
                     connectivity,
                     reference_nodal_coordinates,
-                );
-                Ok(Self::AlmansiHamel(Py::new(py, block)?))
+                )?;
+                Ok(Self::AlmansiHamelEulerian(Py::new(py, block)?))
             }
         }
     }
-    fn nodal_forces<'py>(
-        &self,
-        py: Python<'py>,
-        nodal_coordinates: Vec<[Scalar; 3]>,
-    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+    fn nodal_forces(&self, py: Python, nodal_coordinates: PyLength) -> Result<PyForce, PyErrGlue> {
         match self {
-            Self::AlmansiHamel(model) => call_method!(model, py, "nodal_forces", nodal_coordinates),
+            Self::AlmansiHamelEulerian(model) => {
+                call_method!(model, py, "nodal_forces", nodal_coordinates)
+            }
         }
     }
-    fn nodal_stiffnesses<'py>(
+    fn nodal_stiffnesses(
         &self,
-        py: Python<'py>,
-        nodal_coordinates: Vec<[Scalar; 3]>,
-    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+        py: Python,
+        nodal_coordinates: PyLength,
+    ) -> Result<PyForcePerLength, PyErrGlue> {
         match self {
-            Self::AlmansiHamel(model) => {
+            Self::AlmansiHamelEulerian(model) => {
                 call_method!(model, py, "nodal_stiffnesses", nodal_coordinates)
             }
         }
     }
 }
 
-#[pyclass]
-pub struct AlmansiHamel {
-    block:
-        Block<conspire::constitutive::solid::elastic::AlmansiHamel, LinearTetrahedron, G, M, N, P>,
+#[pyclass(unsendable)]
+pub struct AlmansiHamelEulerian {
+    block: Block<
+        conspire::constitutive::solid::elastic::AlmansiHamelEulerian,
+        LinearTetrahedron<G>,
+        G,
+        M,
+        N,
+        P,
+    >,
 }
 
 #[pymethods]
-impl AlmansiHamel {
+impl AlmansiHamelEulerian {
     #[new]
     pub fn new(
-        bulk_modulus: Scalar,
-        shear_modulus: Scalar,
-        connectivity: Connectivity<N>,
-        reference_nodal_coordinates: Vec<[Scalar; 3]>,
-    ) -> Self {
-        Self {
+        bulk_modulus: crate::units::PyStress,
+        shear_modulus: crate::units::PyStress,
+        connectivity: Vec<[usize; N]>,
+        reference_nodal_coordinates: PyLength,
+    ) -> PyResult<Self> {
+        Ok(Self {
             block: Block::from((
-                conspire::constitutive::solid::elastic::AlmansiHamel {
-                    bulk_modulus,
-                    shear_modulus,
+                conspire::constitutive::solid::elastic::AlmansiHamelEulerian {
+                    bulk_modulus: bulk_modulus.into_inner()?,
+                    shear_modulus: shear_modulus.into_inner()?,
                 },
                 connectivity,
-                NodalReferenceCoordinates::from(reference_nodal_coordinates),
+                &NodalReferenceCoordinates::from(coordinates(&reference_nodal_coordinates)?),
             )),
-        }
+        })
     }
-    fn nodal_forces<'py>(
-        &self,
-        py: Python<'py>,
-        nodal_coordinates: Vec<[Scalar; 3]>,
-    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
-        let forces: Vec<Vec<Scalar>> = self
+    fn nodal_forces(&self, nodal_coordinates: PyLength) -> Result<PyForce, PyErrGlue> {
+        let forces: Vec<[Scalar; 3]> = self
             .block
-            .nodal_forces(&NodalCoordinates::from(nodal_coordinates))?
+            .nodal_forces(&NodalCoordinates::from(coordinates(&nodal_coordinates)?))?
             .into();
-        Ok(PyArray2::from_vec2(py, &forces)?)
+        Ok(PyForce::from_array(ArrayD::from_shape_vec(
+            IxDyn(&[forces.len(), 3]),
+            forces.into_iter().flatten().collect(),
+        )?))
     }
-    fn nodal_stiffnesses<'py>(
+    fn nodal_stiffnesses(
         &self,
-        py: Python<'py>,
-        nodal_coordinates: Vec<[Scalar; 3]>,
-    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
-        let nodes = nodal_coordinates.len();
-        Ok(PyArray4::from_owned_array(
-            py,
-            Array::from_shape_vec(
-                (nodes, nodes, 3, 3),
-                self.block
-                    .nodal_stiffnesses(&NodalCoordinates::from(nodal_coordinates))?
-                    .into(),
-            )?,
+        nodal_coordinates: PyLength,
+    ) -> Result<PyForcePerLength, PyErrGlue> {
+        Ok(stiffnesses(
+            nodal_coordinates
+                .array()
+                .shape()
+                .first()
+                .copied()
+                .unwrap_or(0),
+            &self
+                .block
+                .nodal_stiffnesses(&NodalCoordinates::from(coordinates(&nodal_coordinates)?))?,
         ))
     }
 }

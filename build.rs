@@ -2,7 +2,7 @@ use std::{fs::write, io::Error, path::Path};
 
 use conspire::{
     constitutive::solid::{
-        elastic::doc::almansi_hamel,
+        elastic::doc::almansi_hamel_eulerian,
         hyperelastic::{
             doc::arruda_boyce, doc::fung, doc::gent, doc::hencky, doc::mooney_rivlin,
             doc::neo_hookean, doc::saint_venant_kirchhoff,
@@ -35,7 +35,7 @@ fn math() -> Result<(), Error> {
 
 fn constitutive() -> Result<(), Error> {
     let models = [
-        almansi_hamel(),
+        almansi_hamel_eulerian(),
         arruda_boyce(),
         fung(),
         gent(),

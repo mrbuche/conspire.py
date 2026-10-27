@@ -2,15 +2,41 @@ mod block;
 
 use crate::PyErrGlue;
 use crate::constitutive::solid::{
-    elastic::AlmansiHamel,
+    elastic::AlmansiHamelEulerian,
     hyperelastic::{
         ArrudaBoyce, Fung, Gent, Hencky, MooneyRivlin, NeoHookean, SaintVenantKirchhoff,
     },
 };
+use crate::units::{PyEnergy, PyForce, PyForcePerLength, PyLength};
 use block::{elastic::ElasticBlock, hyperelastic::HyperelasticBlock};
-use conspire::{fem::block::Connectivity, mechanics::Scalar};
-use numpy::{PyArray2, PyArray4};
-use pyo3::prelude::*;
+use conspire::{fem::solid::NodalStiffnessesSolid, math::Tensor, mechanics::Scalar};
+use ndarray::{ArrayD, Ix2, IxDyn};
+use pyo3::{exceptions::PyValueError, prelude::*};
+
+pub fn coordinates(length: &PyLength) -> PyResult<Vec<[Scalar; 3]>> {
+    match length.array().view().into_dimensionality::<Ix2>() {
+        Ok(array) if array.ncols() == 3 => Ok(array
+            .rows()
+            .into_iter()
+            .map(|node| [node[0], node[1], node[2]])
+            .collect()),
+        _ => Err(PyValueError::new_err(
+            "expected nodal coordinates with shape (nodes, 3)",
+        )),
+    }
+}
+
+pub fn stiffnesses(nodes: usize, stiffnesses: &NodalStiffnessesSolid<3>) -> PyForcePerLength {
+    let mut array = ArrayD::<Scalar>::zeros(IxDyn(&[nodes, nodes, 3, 3]));
+    stiffnesses.iter().enumerate().for_each(|(a, row)| {
+        row.entries().for_each(|(b, entry)| {
+            (0..3).for_each(|i| {
+                (0..3).for_each(|j| array[IxDyn(&[a, b, i, j])] = entry[i][j].value())
+            })
+        })
+    });
+    PyForcePerLength::from_array(array)
+}
 
 pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Block>()
@@ -36,7 +62,7 @@ enum Block {
 
 #[derive(FromPyObject)]
 enum Model {
-    AlmansiHamel(Py<AlmansiHamel>),
+    AlmansiHamelEulerian(Py<AlmansiHamelEulerian>),
     ArrudaBoyce(Py<ArrudaBoyce>),
     Gent(Py<Gent>),
     Hencky(Py<Hencky>),
@@ -56,7 +82,7 @@ macro_rules! block_inner {
                     $($model.getattr($py, stringify!($parameter))?.extract($py)?),+,
                     $connectivity,
                     $reference_nodal_coordinates,
-                )
+                )?
             )?)
         )?))
     }
@@ -68,16 +94,16 @@ impl Block {
     fn new(
         py: Python,
         model: Model,
-        connectivity: Connectivity<4>,
-        reference_nodal_coordinates: Vec<[Scalar; 3]>,
+        connectivity: Vec<[usize; 4]>,
+        reference_nodal_coordinates: PyLength,
     ) -> Result<Self, PyErr> {
         match model {
-            Model::AlmansiHamel(model) => block_inner!(
+            Model::AlmansiHamelEulerian(model) => block_inner!(
                 py,
                 model,
                 elastic,
                 ElasticBlock,
-                AlmansiHamel,
+                AlmansiHamelEulerian,
                 connectivity,
                 reference_nodal_coordinates,
                 bulk_modulus,
@@ -173,8 +199,8 @@ impl Block {
     fn helmholtz_free_energy(
         &self,
         py: Python,
-        nodal_coordinates: Vec<[Scalar; 3]>,
-    ) -> Result<Scalar, PyErrGlue> {
+        nodal_coordinates: PyLength,
+    ) -> Result<PyEnergy, PyErrGlue> {
         match self {
             Self::ElasticBlock(_) => Err(PyErrGlue::new(
                 "The Helmholtz free energy density is undefined for elastic constitutive models.",
@@ -187,11 +213,7 @@ impl Block {
     /// $$
     /// \mathbf{f}_a = \frac{\partial A}{\partial\mathbf{x}_a}
     /// $$
-    fn nodal_forces<'py>(
-        &self,
-        py: Python<'py>,
-        nodal_coordinates: Vec<[Scalar; 3]>,
-    ) -> Result<Bound<'py, PyArray2<Scalar>>, PyErrGlue> {
+    fn nodal_forces(&self, py: Python, nodal_coordinates: PyLength) -> Result<PyForce, PyErrGlue> {
         match self {
             Self::ElasticBlock(block) => call_method!(block, py, "nodal_forces", nodal_coordinates),
             Self::HyperelasticBlock(block) => {
@@ -202,11 +224,11 @@ impl Block {
     /// $$
     /// \mathbf{K}_{ab} = \frac{\partial\mathbf{f}_a}{\partial\mathbf{x}_b}
     /// $$
-    fn nodal_stiffnesses<'py>(
+    fn nodal_stiffnesses(
         &self,
-        py: Python<'py>,
-        nodal_coordinates: Vec<[Scalar; 3]>,
-    ) -> Result<Bound<'py, PyArray4<Scalar>>, PyErrGlue> {
+        py: Python,
+        nodal_coordinates: PyLength,
+    ) -> Result<PyForcePerLength, PyErrGlue> {
         match self {
             Self::ElasticBlock(block) => {
                 call_method!(block, py, "nodal_stiffnesses", nodal_coordinates)

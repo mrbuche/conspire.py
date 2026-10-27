@@ -6,9 +6,12 @@ pub mod verner_9;
 macro_rules! explicit {
     ($method: ident) => {
         use crate::PyErrGlue;
-        use conspire::math::{
-            Matrix, Scalar, Vector,
-            integrate::{self, Explicit},
+        use conspire::{
+            math::{
+                Quantity, Scalar, Tensor, TensorVector,
+                integrate::{self, Explicit, Times},
+            },
+            units::{Rate, Time},
         };
         use pyo3::{
             prelude::*,
@@ -77,21 +80,39 @@ macro_rules! explicit {
                 time: Vec<Scalar>,
                 initial_condition: Vec<Scalar>,
             ) -> Result<(Vec<Scalar>, Vec<Vec<Scalar>>, Vec<Vec<Scalar>>), PyErrGlue> {
-                let (t, y, dydt): (Vector, Matrix, Matrix) = self.0.integrate(
-                    |t: Scalar, y: &Vector| {
+                let (t, y, dydt): (
+                    Times,
+                    TensorVector<TensorVector<Quantity>>,
+                    TensorVector<TensorVector<Quantity<Rate>>>,
+                ) = self.0.integrate(
+                    |t: Quantity<Time>, y: &TensorVector<Quantity>| {
                         function
-                            .call1(py, (t, Vec::from(y.clone())))
+                            .call1(
+                                py,
+                                (
+                                    t.in_seconds(),
+                                    y.iter().map(|y| y.value()).collect::<Vec<Scalar>>(),
+                                ),
+                            )
                             .map_err(|e| e.to_string())
                             .and_then(|val| {
-                                val.extract::<Vec<_>>(py)
-                                    .map(Vector::from)
+                                val.extract::<Vec<Scalar>>(py)
+                                    .map(|dydt| dydt.into_iter().map(Rate::per_second).collect())
                                     .map_err(|e| e.to_string())
                             })
                     },
-                    &time,
-                    Vector::from(initial_condition),
+                    &time.into_iter().map(Time::seconds).collect::<Vec<_>>(),
+                    initial_condition.into_iter().map(Quantity::from).collect(),
                 )?;
-                Ok((t.into(), y.into(), dydt.into()))
+                Ok((
+                    t.iter().map(|t| t.in_seconds()).collect(),
+                    y.iter()
+                        .map(|y| y.iter().map(|y| y.value()).collect())
+                        .collect(),
+                    dydt.iter()
+                        .map(|dydt| dydt.iter().map(|dydt| dydt.in_per_second()).collect())
+                        .collect(),
+                ))
             }
         }
     };
