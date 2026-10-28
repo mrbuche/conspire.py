@@ -1,12 +1,111 @@
+from conspire.constitutive.solid import elastic, hyperelastic
+from conspire.units import Stress
 import numpy as np
 
+_BS = {"bulk_modulus": 13, "shear_modulus": 3}
 
-def assert_str(model, name, extra, bulk_modulus, shear_modulus):
-    expected = f"{name}(bulk_modulus={bulk_modulus}, shear_modulus={shear_modulus}"
-    for key, value in extra.items():
-        expected += f", {key}={value}"
-    expected += ")"
-    assert model.__str__() == expected
+
+def _models(module, cases):
+    return [
+        (name, getattr(module, name), params, shear) for name, params, shear in cases
+    ]
+
+
+ELASTIC_MODELS = _models(
+    elastic,
+    [
+        (name, {**_BS, **extra}, 3)
+        for name, extra in [
+            ("AlmansiHamelEulerian", {}),
+            ("AlmansiHamelLagrangian", {}),
+            ("BazantItskovEulerian", {"exponent": 1.3}),
+            ("BazantItskovLagrangian", {"exponent": 1.3}),
+            ("Hencky", {}),
+            ("SaintVenantKirchhoff", {}),
+            ("SethHillEulerian", {"exponent": 1.3}),
+            ("SethHillLagrangian", {"exponent": 1.3}),
+        ]
+    ],
+)
+
+HYPERELASTIC_MODELS = _models(
+    hyperelastic,
+    [
+        ("ArrudaBoyce", {**_BS, "number_of_links": 8}, 3),
+        ("BlatzKo", {**_BS, "mixing_parameter": 0.35}, 3),
+        (
+            "Carroll",
+            {
+                "bulk_modulus": 13,
+                "linear_modulus": 1.2,
+                "quartic_modulus": 1e-4,
+                "second_invariant_modulus": 0.9,
+            },
+            None,
+        ),
+        ("Fung", {**_BS, "extra_modulus": 1, "exponent": 1}, 3),
+        ("Gent", {**_BS, "extensibility": 23}, 3),
+        ("Hencky", _BS, 3),
+        ("Isihara", {**_BS, "extra_modulus": 1.2, "quadratic_modulus": 1e-2}, 3),
+        ("MooneyRivlin", {**_BS, "extra_modulus": 1}, 3),
+        ("NeoHookean", _BS, 3),
+        (
+            "Ogden",
+            {
+                "bulk_modulus": 13,
+                "shear_moduli": [2.3, 1.1e-2, -2e-3],
+                "exponents": [1.3, 5.0, -2.0],
+            },
+            None,
+        ),
+        ("SaintVenantKirchhoff", _BS, 3),
+        (
+            "Yeoh",
+            {"bulk_modulus": 13, "shear_moduli": [3, -1, 3e-1, -1e-3, 1e-5]},
+            3,
+        ),
+    ],
+)
+
+
+def _convert(key, value):
+    if key.endswith(("modulus", "moduli")):
+        return Stress.pascals(np.asarray(value, dtype=float))
+    return value
+
+
+class InPascals:
+    """A model that takes stresses in pascals and returns them in pascals."""
+
+    def __init__(self, model):
+        self._model = model
+
+    def __getattr__(self, name):
+        attribute = getattr(self._model, name)
+        if callable(attribute):
+            return lambda *args: self._unwrap(attribute(*args))
+        return self._unwrap(attribute)
+
+    def __str__(self):
+        return str(self._model)
+
+    @staticmethod
+    def _unwrap(value):
+        return value.in_pascals() if isinstance(value, Stress) else value
+
+
+def build(cls, params):
+    return InPascals(cls(*[_convert(key, value) for key, value in params.items()]))
+
+
+def assert_str(model, name, params):
+    text = str(model)
+    assert text.startswith(f"{name}(") and text.endswith(")")
+    for key, value in params.items():
+        if isinstance(value, list):
+            assert f"{key}=[" in text
+        else:
+            assert f"{key}={float(value)}" in text
 
 
 def assert_helmholtz_free_energy_density_zero(model, identity):

@@ -79,7 +79,7 @@ pub fn inverse_langevin(y: f64) -> f64 {
 /// $$
 #[pyfunction]
 pub fn rosenbrock(x: Vec<f64>, a: f64, b: f64) -> f64 {
-    special::rosenbrock(&Vector::from(x), a, b)
+    special::rosenbrock::<Vector>(&x.into(), a, b)
 }
 
 /// Returns the hyperbolic sinc function.

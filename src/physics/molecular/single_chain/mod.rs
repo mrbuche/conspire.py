@@ -126,9 +126,9 @@ macro_rules! single_chain {
                     number_of_threads,
                 );
                 Ok((
-                    PyArray1::from_vec(py, Vec::from(cos)),
+                    PyArray1::from_vec(py, cos.into()),
                     PyArray2::from_vec2(py, &Vec::from(coscos))?,
-                    PyArray1::from_vec(py, Vec::from(cos2)),
+                    PyArray1::from_vec(py, cos2.into()),
                     PyArray2::from_vec2(py, &Vec::from(cos2cos))?,
                 ))
             }
@@ -159,7 +159,7 @@ macro_rules! single_chain {
                     number_of_samples,
                     number_of_threads,
                 );
-                (PyArray1::from_vec(py, Vec::from(g)), PyArray1::from_vec(py, Vec::from(p)))
+                (PyArray1::from_vec(py, g.into()), PyArray1::from_vec(py, p.into()))
             }
             fn nondimensional_lateral_distribution_monte_carlo<'py>(
                 &self,
@@ -176,7 +176,7 @@ macro_rules! single_chain {
                     number_of_samples,
                     number_of_threads,
                 );
-                (PyArray1::from_vec(py, Vec::from(g)), PyArray1::from_vec(py, Vec::from(p)))
+                (PyArray1::from_vec(py, g.into()), PyArray1::from_vec(py, p.into()))
             }
             fn nondimensional_longitudinal_distribution_monte_carlo<'py>(
                 &self,
@@ -193,7 +193,7 @@ macro_rules! single_chain {
                     number_of_samples,
                     number_of_threads,
                 );
-                (PyArray1::from_vec(py, Vec::from(g)), PyArray1::from_vec(py, Vec::from(p)))
+                (PyArray1::from_vec(py, g.into()), PyArray1::from_vec(py, p.into()))
             }
             fn nondimensional_radial_distribution_monte_carlo<'py>(
                 &self,
@@ -210,7 +210,7 @@ macro_rules! single_chain {
                     number_of_samples,
                     number_of_threads,
                 );
-                (PyArray1::from_vec(py, Vec::from(g)), PyArray1::from_vec(py, Vec::from(p)))
+                (PyArray1::from_vec(py, g.into()), PyArray1::from_vec(py, p.into()))
             }
             fn nondimensional_transverse_distribution_monte_carlo<'py>(
                 &self,
@@ -227,7 +227,7 @@ macro_rules! single_chain {
                     number_of_samples,
                     number_of_threads,
                 );
-                (PyArray1::from_vec(py, Vec::from(g)), PyArray1::from_vec(py, Vec::from(p)))
+                (PyArray1::from_vec(py, g.into()), PyArray1::from_vec(py, p.into()))
             }
             fn nondimensional_spherical_distribution(
                 &self,

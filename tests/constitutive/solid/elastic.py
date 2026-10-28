@@ -1,5 +1,6 @@
-from conspire.constitutive.solid.elastic import AlmansiHamel
 from constitutive_helpers import (
+    ELASTIC_MODELS,
+    build,
     assert_bulk_modulus,
     assert_cauchy_stress_relate_first_piola_kirchhoff_stress,
     assert_cauchy_stress_relate_second_piola_kirchhoff_stress,
@@ -15,25 +16,23 @@ from constitutive_helpers import (
 )
 import pytest
 
-MODELS = [
-    ("AlmansiHamel", AlmansiHamel, {}),
-]
+MODELS = ELASTIC_MODELS
 
 
-@pytest.fixture(params=MODELS, ids=[name for name, _, _ in MODELS])
+@pytest.fixture(params=MODELS, ids=[name for name, *_ in MODELS])
 def model_case(request):
     return request.param
 
 
 @pytest.fixture
-def model(model_case, bulk_modulus, shear_modulus):
-    _, cls, extra = model_case
-    return cls(bulk_modulus, shear_modulus, *extra.values())
+def model(model_case):
+    _, cls, params, _ = model_case
+    return build(cls, params)
 
 
-def test_str(model, model_case, bulk_modulus, shear_modulus):
-    name, _, extra = model_case
-    assert_str(model, name, extra, bulk_modulus, shear_modulus)
+def test_str(model, model_case):
+    name, _, params, _ = model_case
+    assert_str(model, name, params)
 
 
 def test_cauchy_stress_zero(model, identity, zero):
@@ -68,7 +67,10 @@ def test_cauchy_stress_relate_second_piola_kirchhoff_stress(
     )
 
 
-def test_shear_modulus(model, simple_shear_small, epsilon, shear_modulus):
+def test_shear_modulus(model, model_case, simple_shear_small, epsilon):
+    shear_modulus = model_case[3]
+    if shear_modulus is None:
+        pytest.skip("no closed-form shear modulus for this parameter set")
     assert_shear_modulus(model, simple_shear_small, epsilon, shear_modulus)
 
 

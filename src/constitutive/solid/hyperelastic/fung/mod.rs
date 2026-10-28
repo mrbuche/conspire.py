@@ -1,1 +1,1 @@
-super::hyperelastic!(Fung, bulk_modulus, shear_modulus, extra_modulus, exponent,);
+super::hyperelastic!(Fung, bulk_modulus: PyStress, shear_modulus: PyStress, extra_modulus: PyStress, exponent: Scalar,);
