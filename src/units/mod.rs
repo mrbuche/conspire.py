@@ -1,11 +1,8 @@
 use conspire::{
-    math::{
-        Current, Quantity, Reference, Scalar, Tensor, TensorRank1Vec, TensorRank2,
-        TensorRank2SparseVec2D, TensorRank4,
-    },
+    math::{Quantity, Scalar, TensorRank2, TensorRank4},
     units::{Energy, Force, ForcePerLength, Length, Stress},
 };
-use ndarray::{ArrayD, Ix2, IxDyn};
+use ndarray::{ArrayD, IxDyn};
 use numpy::{IntoPyArray, PyReadonlyArrayDyn};
 use pyo3::{IntoPyObjectExt, exceptions::PyValueError, prelude::*};
 
@@ -110,13 +107,6 @@ macro_rules! quantity {
                 }))
             }
         }
-        impl<I> From<TensorRank1Vec<3, I, $unit>> for $class {
-            fn from(vector: TensorRank1Vec<3, I, $unit>) -> Self {
-                Self(ArrayD::from_shape_fn(IxDyn(&[vector.len(), 3]), |ix| {
-                    vector[ix[0]][ix[1]].value()
-                }))
-            }
-        }
     };
 }
 
@@ -161,45 +151,3 @@ quantity!(
     psi / in_psi,
     ksi / in_ksi,
 );
-
-impl From<&TensorRank2SparseVec2D<3, Current, Current, ForcePerLength>> for PyForcePerLength {
-    fn from(stiffnesses: &TensorRank2SparseVec2D<3, Current, Current, ForcePerLength>) -> Self {
-        let nodes = stiffnesses.len();
-        let mut array = ArrayD::<Scalar>::zeros(IxDyn(&[nodes, nodes, 3, 3]));
-        stiffnesses.iter().enumerate().for_each(|(a, row)| {
-            row.entries().for_each(|(b, entry)| {
-                (0..3).for_each(|i| {
-                    (0..3).for_each(|j| array[IxDyn(&[a, b, i, j])] = entry[i][j].value())
-                })
-            })
-        });
-        Self(array)
-    }
-}
-
-fn nodes(length: &PyLength) -> PyResult<Vec<[Scalar; 3]>> {
-    match length.0.view().into_dimensionality::<Ix2>() {
-        Ok(array) if array.ncols() == 3 => Ok(array
-            .rows()
-            .into_iter()
-            .map(|node| [node[0], node[1], node[2]])
-            .collect()),
-        _ => Err(PyValueError::new_err(
-            "expected nodal coordinates with shape (nodes, 3)",
-        )),
-    }
-}
-
-impl TryFrom<&PyLength> for TensorRank1Vec<3, Current, Length> {
-    type Error = PyErr;
-    fn try_from(length: &PyLength) -> PyResult<Self> {
-        Ok(nodes(length)?.into())
-    }
-}
-
-impl TryFrom<&PyLength> for TensorRank1Vec<3, Reference, Length> {
-    type Error = PyErr;
-    fn try_from(length: &PyLength) -> PyResult<Self> {
-        Ok(nodes(length)?.into())
-    }
-}

@@ -1,12 +1,9 @@
 mod constitutive;
-mod fem;
 mod math;
 mod physics;
 mod units;
 
-use ::conspire::{
-    constitutive::ConstitutiveError, domain::ElementModelError, math::integrate::IntegrationError,
-};
+use ::conspire::{constitutive::ConstitutiveError, math::integrate::IntegrationError};
 use ndarray::ShapeError;
 use numpy::FromVecError;
 use pyo3::{exceptions::PyTypeError, prelude::*};
@@ -21,14 +18,12 @@ use pyo3::{exceptions::PyTypeError, prelude::*};
 /// - [math](conspire/math.html) - Mathematics library.
 /// - [physics](conspire/physics.html) - Physics library.
 /// - [constitutive](conspire/constitutive.html) - Constitutive model library.
-/// - [fem](conspire/fem.html) - Finite element library.
 /// - [units](conspire/units.html) - Units and quantities.
 #[pymodule]
 fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     let submodule_math = PyModule::new(py, "math")?;
     let submodule_physics = PyModule::new(py, "physics")?;
     let submodule_constitutive = PyModule::new(py, "constitutive")?;
-    let submodule_fem = PyModule::new(py, "fem")?;
     let submodule_units = PyModule::new(py, "units")?;
     submodule_math.setattr(
         "__doc__",
@@ -42,17 +37,14 @@ fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
         "__doc__",
         "Constitutive model library.\n\n - [solid](constitutive/solid.html) - Solid constitutive models.",
     )?;
-    submodule_fem.setattr("__doc__", "Finite element library.")?;
     submodule_units.setattr("__doc__", "Units and quantities.")?;
     m.add_submodule(&submodule_math)?;
     m.add_submodule(&submodule_physics)?;
     m.add_submodule(&submodule_constitutive)?;
-    m.add_submodule(&submodule_fem)?;
     m.add_submodule(&submodule_units)?;
     math::register_module(py, &submodule_math)?;
     physics::register_module(py, &submodule_physics)?;
     constitutive::register_module(py, &submodule_constitutive)?;
-    fem::register_module(&submodule_fem)?;
     units::register_module(&submodule_units)?;
     py.import("sys")?
         .getattr("modules")?
@@ -65,22 +57,11 @@ fn conspire(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
         .set_item("conspire.constitutive", submodule_constitutive)?;
     py.import("sys")?
         .getattr("modules")?
-        .set_item("conspire.fem", submodule_fem)?;
-    py.import("sys")?
-        .getattr("modules")?
         .set_item("conspire.units", submodule_units)
 }
 
 struct PyErrGlue {
     message: String,
-}
-
-impl PyErrGlue {
-    fn new(message: &str) -> Self {
-        Self {
-            message: message.into(),
-        }
-    }
 }
 
 impl From<PyErrGlue> for PyErr {
@@ -99,14 +80,6 @@ impl From<ConstitutiveError> for PyErrGlue {
 
 impl From<IntegrationError> for PyErrGlue {
     fn from(error: IntegrationError) -> Self {
-        PyErrGlue {
-            message: format!("{error:?}\x1B[A"),
-        }
-    }
-}
-
-impl From<ElementModelError> for PyErrGlue {
-    fn from(error: ElementModelError) -> Self {
         PyErrGlue {
             message: format!("{error:?}\x1B[A"),
         }
