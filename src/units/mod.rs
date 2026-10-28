@@ -93,6 +93,23 @@ macro_rules! quantity {
                 }))
             }
         }
+        impl TryFrom<$class> for Vec<Quantity<$unit>> {
+            type Error = PyErr;
+            fn try_from(quantities: $class) -> PyResult<Self> {
+                if quantities.0.ndim() == 1 {
+                    Ok(quantities.0.iter().map(|&value| $unit::$base(value)).collect())
+                } else {
+                    Err(PyValueError::new_err(concat!("expected a list of ", $name)))
+                }
+            }
+        }
+        impl From<Vec<Quantity<$unit>>> for $class {
+            fn from(quantities: Vec<Quantity<$unit>>) -> Self {
+                Self(ArrayD::from_shape_fn(IxDyn(&[quantities.len()]), |ix| {
+                    quantities[ix[0]].value()
+                }))
+            }
+        }
         impl<I> From<TensorRank1Vec<3, I, $unit>> for $class {
             fn from(vector: TensorRank1Vec<3, I, $unit>) -> Self {
                 Self(ArrayD::from_shape_fn(IxDyn(&[vector.len(), 3]), |ix| {

@@ -2,10 +2,15 @@ use std::{fs::write, io::Error, path::Path};
 
 use conspire::{
     constitutive::solid::{
-        elastic::doc::almansi_hamel_eulerian,
-        hyperelastic::{
-            doc::arruda_boyce, doc::fung, doc::gent, doc::hencky, doc::mooney_rivlin,
-            doc::neo_hookean, doc::saint_venant_kirchhoff,
+        elastic::doc::{
+            almansi_hamel_eulerian, almansi_hamel_lagrangian, bazant_itskov_eulerian,
+            bazant_itskov_lagrangian, hencky as elastic_hencky,
+            saint_venant_kirchhoff as elastic_saint_venant_kirchhoff, seth_hill_eulerian,
+            seth_hill_lagrangian,
+        },
+        hyperelastic::doc::{
+            arruda_boyce, blatz_ko, carroll, fung, gent, hencky, isihara, mooney_rivlin,
+            neo_hookean, ogden, saint_venant_kirchhoff, yeoh,
         },
     },
     math::integrate::doc::{EXPLICIT, bogacki_shampine, dormand_prince, verner_8, verner_9},
@@ -36,13 +41,25 @@ fn math() -> Result<(), Error> {
 fn constitutive() -> Result<(), Error> {
     let models = [
         almansi_hamel_eulerian(),
+        almansi_hamel_lagrangian(),
         arruda_boyce(),
+        bazant_itskov_eulerian(),
+        bazant_itskov_lagrangian(),
+        blatz_ko(),
+        carroll(),
+        elastic_hencky(),
+        elastic_saint_venant_kirchhoff(),
         fung(),
         gent(),
         hencky(),
+        isihara(),
         mooney_rivlin(),
         neo_hookean(),
+        ogden(),
         saint_venant_kirchhoff(),
+        seth_hill_eulerian(),
+        seth_hill_lagrangian(),
+        yeoh(),
     ];
     models.iter().try_for_each(|model| {
         let path = model[0][0];

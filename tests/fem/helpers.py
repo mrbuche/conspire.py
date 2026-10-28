@@ -1,6 +1,78 @@
+from conspire.constitutive.solid import elastic, hyperelastic
 from conspire.fem import Block
 from conspire.units import Energy, Force, ForcePerLength, Length, Stress
 import numpy as np
+
+_BS = {"bulk_modulus": 13, "shear_modulus": 3}
+
+
+def _models(module, cases):
+    return [
+        (name, getattr(module, name), params, shear) for name, params, shear in cases
+    ]
+
+
+ELASTIC_MODELS = _models(
+    elastic,
+    [
+        (name, {**_BS, **extra}, 3)
+        for name, extra in [
+            ("AlmansiHamelEulerian", {}),
+            ("AlmansiHamelLagrangian", {}),
+            ("BazantItskovEulerian", {"exponent": 1.3}),
+            ("BazantItskovLagrangian", {"exponent": 1.3}),
+            ("Hencky", {}),
+            ("SaintVenantKirchhoff", {}),
+            ("SethHillEulerian", {"exponent": 1.3}),
+            ("SethHillLagrangian", {"exponent": 1.3}),
+        ]
+    ],
+)
+
+HYPERELASTIC_MODELS = _models(
+    hyperelastic,
+    [
+        ("ArrudaBoyce", {**_BS, "number_of_links": 8}, 3),
+        ("BlatzKo", {**_BS, "mixing_parameter": 0.35}, 3),
+        (
+            "Carroll",
+            {
+                "bulk_modulus": 13,
+                "linear_modulus": 1.2,
+                "quartic_modulus": 1e-4,
+                "second_invariant_modulus": 0.9,
+            },
+            None,
+        ),
+        ("Fung", {**_BS, "extra_modulus": 1, "exponent": 1}, 3),
+        ("Gent", {**_BS, "extensibility": 23}, 3),
+        ("Hencky", _BS, 3),
+        ("Isihara", {**_BS, "extra_modulus": 1.2, "quadratic_modulus": 1e-2}, 3),
+        ("MooneyRivlin", {**_BS, "extra_modulus": 1}, 3),
+        ("NeoHookean", _BS, 3),
+        (
+            "Ogden",
+            {
+                "bulk_modulus": 13,
+                "shear_moduli": [2.3, 1.1e-2, -2e-3],
+                "exponents": [1.3, 5.0, -2.0],
+            },
+            None,
+        ),
+        ("SaintVenantKirchhoff", _BS, 3),
+        (
+            "Yeoh",
+            {"bulk_modulus": 13, "shear_moduli": [3, -1, 3e-1, -1e-3, 1e-5]},
+            3,
+        ),
+    ],
+)
+
+
+def _convert(key, value):
+    if key.endswith(("modulus", "moduli")):
+        return Stress.pascals(np.asarray(value, dtype=float))
+    return value
 
 
 class InPascals:
@@ -41,14 +113,8 @@ class InSI:
         return value
 
 
-def build(cls, bulk_modulus, shear_modulus, extra):
-    parameters = [
-        Stress.pascals(value) if key.endswith("modulus") else value
-        for key, value in extra.items()
-    ]
-    return InPascals(
-        cls(Stress.pascals(bulk_modulus), Stress.pascals(shear_modulus), *parameters)
-    )
+def build(cls, params):
+    return InPascals(cls(*[_convert(key, value) for key, value in params.items()]))
 
 
 def make_block(model, connectivity, reference_coordinates):

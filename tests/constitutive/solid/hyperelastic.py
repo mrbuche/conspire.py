@@ -1,13 +1,5 @@
-from conspire.constitutive.solid.hyperelastic import (
-    ArrudaBoyce,
-    Fung,
-    Gent,
-    Hencky,
-    MooneyRivlin,
-    NeoHookean,
-    SaintVenantKirchhoff,
-)
 from constitutive_helpers import (
+    HYPERELASTIC_MODELS,
     build,
     assert_bulk_modulus,
     assert_cauchy_stress_relate_first_piola_kirchhoff_stress,
@@ -27,31 +19,23 @@ from constitutive_helpers import (
 )
 import pytest
 
-MODELS = [
-    ("NeoHookean", NeoHookean, {}),
-    ("ArrudaBoyce", ArrudaBoyce, {"number_of_links": 8}),
-    ("Fung", Fung, {"extra_modulus": 1, "exponent": 1}),
-    ("Gent", Gent, {"extensibility": 23}),
-    ("Hencky", Hencky, {}),
-    ("MooneyRivlin", MooneyRivlin, {"extra_modulus": 1}),
-    ("SaintVenantKirchhoff", SaintVenantKirchhoff, {}),
-]
+MODELS = HYPERELASTIC_MODELS
 
 
-@pytest.fixture(params=MODELS, ids=[name for name, _, _ in MODELS])
+@pytest.fixture(params=MODELS, ids=[name for name, *_ in MODELS])
 def model_case(request):
     return request.param
 
 
 @pytest.fixture
-def model(model_case, bulk_modulus, shear_modulus):
-    _, cls, extra = model_case
-    return build(cls, bulk_modulus, shear_modulus, extra)
+def model(model_case):
+    _, cls, params, _ = model_case
+    return build(cls, params)
 
 
-def test_str(model, model_case, bulk_modulus, shear_modulus):
-    name, _, extra = model_case
-    assert_str(model, name, extra, bulk_modulus, shear_modulus)
+def test_str(model, model_case):
+    name, _, params, _ = model_case
+    assert_str(model, name, params)
 
 
 def test_helmholtz_free_energy_density_zero(model, identity):
@@ -106,7 +90,10 @@ def test_cauchy_stress_relate_second_piola_kirchhoff_stress(
     )
 
 
-def test_shear_modulus(model, simple_shear_small, epsilon, shear_modulus):
+def test_shear_modulus(model, model_case, simple_shear_small, epsilon):
+    shear_modulus = model_case[3]
+    if shear_modulus is None:
+        pytest.skip("no closed-form shear modulus for this parameter set")
     assert_shear_modulus(model, simple_shear_small, epsilon, shear_modulus)
 
 

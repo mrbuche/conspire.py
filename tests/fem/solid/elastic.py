@@ -1,5 +1,5 @@
-from conspire.constitutive.solid.elastic import AlmansiHamelEulerian
 from helpers import (
+    ELASTIC_MODELS,
     assert_nodal_forces_zero,
     assert_nodal_stiffnesses_finite_difference,
     build,
@@ -8,20 +8,18 @@ from helpers import (
 from pytest import raises
 import pytest
 
-MODELS = [
-    ("AlmansiHamelEulerian", AlmansiHamelEulerian, {}),
-]
+MODELS = ELASTIC_MODELS
 
 
-@pytest.fixture(params=MODELS, ids=[name for name, _, _ in MODELS])
+@pytest.fixture(params=MODELS, ids=[name for name, *_ in MODELS])
 def model_case(request):
     return request.param
 
 
 @pytest.fixture
-def model(model_case, bulk_modulus, shear_modulus):
-    _, cls, extra = model_case
-    return build(cls, bulk_modulus, shear_modulus, extra)
+def model(model_case):
+    _, cls, params, _ = model_case
+    return build(cls, params)
 
 
 @pytest.fixture

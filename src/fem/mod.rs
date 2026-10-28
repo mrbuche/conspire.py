@@ -1,14 +1,11 @@
 mod block;
 
 use crate::PyErrGlue;
-use crate::constitutive::solid::{
-    elastic::AlmansiHamelEulerian,
-    hyperelastic::{
-        ArrudaBoyce, Fung, Gent, Hencky, MooneyRivlin, NeoHookean, SaintVenantKirchhoff,
-    },
-};
 use crate::units::{PyEnergy, PyForce, PyForcePerLength, PyLength};
-use block::{elastic::ElasticBlock, hyperelastic::HyperelasticBlock};
+use block::{
+    elastic::{ElasticBlock, ElasticModel},
+    hyperelastic::{HyperelasticBlock, HyperelasticModel},
+};
 use pyo3::prelude::*;
 
 pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -33,31 +30,9 @@ enum Block {
 }
 
 #[derive(FromPyObject)]
-enum Model {
-    AlmansiHamelEulerian(Py<AlmansiHamelEulerian>),
-    ArrudaBoyce(Py<ArrudaBoyce>),
-    Gent(Py<Gent>),
-    Hencky(Py<Hencky>),
-    Fung(Py<Fung>),
-    MooneyRivlin(Py<MooneyRivlin>),
-    NeoHookean(Py<NeoHookean>),
-    SaintVenantKirchhoff(Py<SaintVenantKirchhoff>),
-}
-
-macro_rules! block_inner {
-    ($py: ident, $model: ident, $type: ident, $block: ident, $name: ident, $connectivity: ident, $reference_nodal_coordinates: ident, $($parameter: expr),+ $(,)?) => {
-        Ok(Self::$block(Py::new(
-            $py,
-            $block::$name(Py::new(
-                $py,
-                block::$type::$name::new(
-                    $($model.getattr($py, stringify!($parameter))?.extract($py)?),+,
-                    $connectivity,
-                    $reference_nodal_coordinates,
-                )?
-            )?)
-        )?))
-    }
+enum Model<'py> {
+    Elastic(ElasticModel<'py>),
+    Hyperelastic(HyperelasticModel<'py>),
 }
 
 #[pymethods]
@@ -70,99 +45,14 @@ impl Block {
         reference_nodal_coordinates: PyLength,
     ) -> Result<Self, PyErr> {
         match model {
-            Model::AlmansiHamelEulerian(model) => block_inner!(
+            Model::Elastic(model) => Ok(Self::ElasticBlock(Py::new(
                 py,
-                model,
-                elastic,
-                ElasticBlock,
-                AlmansiHamelEulerian,
-                connectivity,
-                reference_nodal_coordinates,
-                bulk_modulus,
-                shear_modulus,
-            ),
-            Model::ArrudaBoyce(model) => block_inner!(
+                ElasticBlock::new(py, model, connectivity, reference_nodal_coordinates)?,
+            )?)),
+            Model::Hyperelastic(model) => Ok(Self::HyperelasticBlock(Py::new(
                 py,
-                model,
-                hyperelastic,
-                HyperelasticBlock,
-                ArrudaBoyce,
-                connectivity,
-                reference_nodal_coordinates,
-                bulk_modulus,
-                shear_modulus,
-                number_of_links,
-            ),
-            Model::Fung(model) => block_inner!(
-                py,
-                model,
-                hyperelastic,
-                HyperelasticBlock,
-                Fung,
-                connectivity,
-                reference_nodal_coordinates,
-                bulk_modulus,
-                shear_modulus,
-                extra_modulus,
-                exponent,
-            ),
-            Model::Gent(model) => block_inner!(
-                py,
-                model,
-                hyperelastic,
-                HyperelasticBlock,
-                Gent,
-                connectivity,
-                reference_nodal_coordinates,
-                bulk_modulus,
-                shear_modulus,
-                extensibility,
-            ),
-            Model::Hencky(model) => block_inner!(
-                py,
-                model,
-                hyperelastic,
-                HyperelasticBlock,
-                Hencky,
-                connectivity,
-                reference_nodal_coordinates,
-                bulk_modulus,
-                shear_modulus,
-            ),
-            Model::MooneyRivlin(model) => block_inner!(
-                py,
-                model,
-                hyperelastic,
-                HyperelasticBlock,
-                MooneyRivlin,
-                connectivity,
-                reference_nodal_coordinates,
-                bulk_modulus,
-                shear_modulus,
-                extra_modulus,
-            ),
-            Model::NeoHookean(model) => block_inner!(
-                py,
-                model,
-                hyperelastic,
-                HyperelasticBlock,
-                NeoHookean,
-                connectivity,
-                reference_nodal_coordinates,
-                bulk_modulus,
-                shear_modulus,
-            ),
-            Model::SaintVenantKirchhoff(model) => block_inner!(
-                py,
-                model,
-                hyperelastic,
-                HyperelasticBlock,
-                SaintVenantKirchhoff,
-                connectivity,
-                reference_nodal_coordinates,
-                bulk_modulus,
-                shear_modulus,
-            ),
+                HyperelasticBlock::new(py, model, connectivity, reference_nodal_coordinates)?,
+            )?)),
         }
     }
     /// $$

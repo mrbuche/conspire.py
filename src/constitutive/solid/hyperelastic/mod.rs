@@ -1,29 +1,44 @@
 mod arruda_boyce;
+mod blatz_ko;
+mod carroll;
 mod fung;
 mod gent;
 mod hencky;
+mod isihara;
 mod mooney_rivlin;
 mod neo_hookean;
+mod ogden;
 mod saint_venant_kirchhoff;
+mod yeoh;
 
 use pyo3::prelude::*;
 
 pub use arruda_boyce::ArrudaBoyce;
+pub use blatz_ko::BlatzKo;
+pub use carroll::Carroll;
 pub use fung::Fung;
 pub use gent::Gent;
 pub use hencky::Hencky;
+pub use isihara::Isihara;
 pub use mooney_rivlin::MooneyRivlin;
 pub use neo_hookean::NeoHookean;
+pub use ogden::Ogden;
 pub use saint_venant_kirchhoff::SaintVenantKirchhoff;
+pub use yeoh::Yeoh;
 
 pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<ArrudaBoyce>()?;
+    m.add_class::<BlatzKo>()?;
+    m.add_class::<Carroll>()?;
     m.add_class::<Fung>()?;
     m.add_class::<Gent>()?;
     m.add_class::<Hencky>()?;
+    m.add_class::<Isihara>()?;
     m.add_class::<MooneyRivlin>()?;
     m.add_class::<NeoHookean>()?;
-    m.add_class::<SaintVenantKirchhoff>()
+    m.add_class::<Ogden>()?;
+    m.add_class::<SaintVenantKirchhoff>()?;
+    m.add_class::<Yeoh>()
 }
 
 macro_rules! hyperelastic {
@@ -36,7 +51,6 @@ macro_rules! hyperelastic {
         use conspire::{
             constitutive::{
                 solid::{
-                    Solid,
                     elastic::Elastic,
                     hyperelastic::{Hyperelastic, $model as Inner}
                 },
@@ -59,7 +73,7 @@ macro_rules! hyperelastic {
                 /// @private
                 #[getter]
                 pub fn $parameter(&self) -> $ty {
-                    self.0.$parameter().into()
+                    self.0.$parameter.clone().into()
                 }
             )+
             #[doc = include_str!("helmholtz_free_energy_density.md")]
