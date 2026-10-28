@@ -1,5 +1,5 @@
 from conspire.constitutive.solid import elastic, hyperelastic
-from conspire.fem import Block
+from conspire.fem import Model
 from conspire.units import Energy, Force, ForcePerLength, Length, Stress
 import numpy as np
 
@@ -93,10 +93,10 @@ class InPascals:
 
 
 class InSI:
-    """A block that takes lengths in meters and returns SI energies and forces."""
+    """A fem_model that takes lengths in meters and returns SI energies and forces."""
 
-    def __init__(self, block):
-        self._block = block
+    def __init__(self, fem_model):
+        self._block = fem_model
 
     def __getattr__(self, name):
         method = getattr(self._block, name)
@@ -117,39 +117,39 @@ def build(cls, params):
     return InPascals(cls(*[_convert(key, value) for key, value in params.items()]))
 
 
-def make_block(model, connectivity, reference_coordinates):
-    return InSI(Block(model.raw, connectivity, Length.meters(reference_coordinates)))
+def make_model(model, connectivity, reference_coordinates):
+    return InSI(Model(model.raw, connectivity, Length.meters(reference_coordinates)))
 
 
-def assert_nodal_forces_zero(block, reference_coordinates):
-    assert np.all(block.nodal_forces(reference_coordinates) == 0.0)
+def assert_nodal_forces_zero(fem_model, reference_coordinates):
+    assert np.all(fem_model.nodal_forces(reference_coordinates) == 0.0)
 
 
 def assert_nodal_forces_finite_difference(
-    block, reference_coordinates, deformed_coordinates, epsilon
+    fem_model, reference_coordinates, deformed_coordinates, epsilon
 ):
-    forces = block.nodal_forces(deformed_coordinates)
+    forces = fem_model.nodal_forces(deformed_coordinates)
     for a in range(len(reference_coordinates)):
         for i in range(3):
             deformed_coordinates[a, i] += epsilon / 2
-            d_helmholtz = block.helmholtz_free_energy(deformed_coordinates)
+            d_helmholtz = fem_model.helmholtz_free_energy(deformed_coordinates)
             deformed_coordinates[a, i] -= epsilon
-            d_helmholtz -= block.helmholtz_free_energy(deformed_coordinates)
+            d_helmholtz -= fem_model.helmholtz_free_energy(deformed_coordinates)
             assert np.abs(forces[a, i] - d_helmholtz / epsilon) < epsilon
             deformed_coordinates[a, i] += epsilon / 2
 
 
 def assert_nodal_stiffnesses_finite_difference(
-    block, reference_coordinates, deformed_coordinates, epsilon
+    fem_model, reference_coordinates, deformed_coordinates, epsilon
 ):
-    tan = block.nodal_stiffnesses(deformed_coordinates)
+    tan = fem_model.nodal_stiffnesses(deformed_coordinates)
     for a in range(len(reference_coordinates)):
         for b in range(len(reference_coordinates)):
             for i in range(3):
                 for j in range(3):
                     deformed_coordinates[b, j] += epsilon / 2
-                    d_force = block.nodal_forces(deformed_coordinates)[a, i]
+                    d_force = fem_model.nodal_forces(deformed_coordinates)[a, i]
                     deformed_coordinates[b, j] -= epsilon
-                    d_force -= block.nodal_forces(deformed_coordinates)[a, i]
+                    d_force -= fem_model.nodal_forces(deformed_coordinates)[a, i]
                     assert np.abs(tan[a, b, i, j] - d_force / epsilon) < epsilon
                     deformed_coordinates[b, j] += epsilon / 2

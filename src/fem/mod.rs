@@ -1,15 +1,15 @@
-mod block;
+mod model;
 
 use crate::PyErrGlue;
 use crate::units::{PyEnergy, PyForce, PyForcePerLength, PyLength};
-use block::{
-    elastic::{ElasticBlock, ElasticModel},
-    hyperelastic::{HyperelasticBlock, HyperelasticModel},
+use model::{
+    elastic::{ElasticConstitutive, ElasticModel},
+    hyperelastic::{HyperelasticConstitutive, HyperelasticModel},
 };
 use pyo3::prelude::*;
 
 pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<Block>()
+    m.add_class::<Model>()
 }
 
 macro_rules! call_method {
@@ -22,36 +22,36 @@ macro_rules! call_method {
 }
 pub(crate) use call_method;
 
-/// Finite element block.
+/// Finite element model.
 #[pyclass]
-enum Block {
-    ElasticBlock(Py<ElasticBlock>),
-    HyperelasticBlock(Py<HyperelasticBlock>),
+enum Model {
+    Elastic(Py<ElasticModel>),
+    Hyperelastic(Py<HyperelasticModel>),
 }
 
 #[derive(FromPyObject)]
-enum Model<'py> {
-    Elastic(ElasticModel<'py>),
-    Hyperelastic(HyperelasticModel<'py>),
+enum Constitutive<'py> {
+    Elastic(ElasticConstitutive<'py>),
+    Hyperelastic(HyperelasticConstitutive<'py>),
 }
 
 #[pymethods]
-impl Block {
+impl Model {
     #[new]
     fn new(
         py: Python,
-        model: Model,
+        constitutive_model: Constitutive,
         connectivity: Vec<[usize; 4]>,
         reference_nodal_coordinates: PyLength,
     ) -> Result<Self, PyErr> {
-        match model {
-            Model::Elastic(model) => Ok(Self::ElasticBlock(Py::new(
+        match constitutive_model {
+            Constitutive::Elastic(model) => Ok(Self::Elastic(Py::new(
                 py,
-                ElasticBlock::new(py, model, connectivity, reference_nodal_coordinates)?,
+                ElasticModel::new(py, model, connectivity, reference_nodal_coordinates)?,
             )?)),
-            Model::Hyperelastic(model) => Ok(Self::HyperelasticBlock(Py::new(
+            Constitutive::Hyperelastic(model) => Ok(Self::Hyperelastic(Py::new(
                 py,
-                HyperelasticBlock::new(py, model, connectivity, reference_nodal_coordinates)?,
+                HyperelasticModel::new(py, model, connectivity, reference_nodal_coordinates)?,
             )?)),
         }
     }
@@ -64,11 +64,11 @@ impl Block {
         nodal_coordinates: PyLength,
     ) -> Result<PyEnergy, PyErrGlue> {
         match self {
-            Self::ElasticBlock(_) => Err(PyErrGlue::new(
+            Self::Elastic(_) => Err(PyErrGlue::new(
                 "The Helmholtz free energy density is undefined for elastic constitutive models.",
             )),
-            Self::HyperelasticBlock(block) => {
-                call_method!(block, py, "helmholtz_free_energy", nodal_coordinates)
+            Self::Hyperelastic(model) => {
+                call_method!(model, py, "helmholtz_free_energy", nodal_coordinates)
             }
         }
     }
@@ -77,10 +77,8 @@ impl Block {
     /// $$
     fn nodal_forces(&self, py: Python, nodal_coordinates: PyLength) -> Result<PyForce, PyErrGlue> {
         match self {
-            Self::ElasticBlock(block) => call_method!(block, py, "nodal_forces", nodal_coordinates),
-            Self::HyperelasticBlock(block) => {
-                call_method!(block, py, "nodal_forces", nodal_coordinates)
-            }
+            Self::Elastic(model) => call_method!(model, py, "nodal_forces", nodal_coordinates),
+            Self::Hyperelastic(model) => call_method!(model, py, "nodal_forces", nodal_coordinates),
         }
     }
     /// $$
@@ -92,11 +90,9 @@ impl Block {
         nodal_coordinates: PyLength,
     ) -> Result<PyForcePerLength, PyErrGlue> {
         match self {
-            Self::ElasticBlock(block) => {
-                call_method!(block, py, "nodal_stiffnesses", nodal_coordinates)
-            }
-            Self::HyperelasticBlock(block) => {
-                call_method!(block, py, "nodal_stiffnesses", nodal_coordinates)
+            Self::Elastic(model) => call_method!(model, py, "nodal_stiffnesses", nodal_coordinates),
+            Self::Hyperelastic(model) => {
+                call_method!(model, py, "nodal_stiffnesses", nodal_coordinates)
             }
         }
     }

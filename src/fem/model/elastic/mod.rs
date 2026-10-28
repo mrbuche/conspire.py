@@ -6,7 +6,8 @@ use crate::{
 };
 use conspire::{
     fem::{
-        block::{Block, element::linear::Tetrahedron as LinearTetrahedron},
+        Model as FemModel, NodalReferenceCoordinates,
+        block::{Block, element::linear::Tetrahedron},
         solid::elastic::ElasticElements,
     },
     mechanics::Scalar,
@@ -18,29 +19,29 @@ pub const M: usize = 3;
 pub const N: usize = 4;
 pub const P: usize = N;
 
-macro_rules! elastic_blocks {
+macro_rules! elastic_models {
     ($($name: ident [$($parameter: ident : $ty: ty),+]);+ $(;)?) => {
         #[pyclass]
-        pub enum ElasticBlock {
+        pub enum ElasticModel {
             $($name(Py<$name>)),+
         }
 
         #[derive(FromPyObject)]
-        pub enum ElasticModel<'py> {
+        pub enum ElasticConstitutive<'py> {
             $($name(Bound<'py, constitutive::$name>)),+
         }
 
         #[pymethods]
-        impl ElasticBlock {
+        impl ElasticModel {
             #[new]
             pub fn new(
                 py: Python,
-                model: ElasticModel,
+                constitutive_model: ElasticConstitutive,
                 connectivity: Vec<[usize; N]>,
                 reference_nodal_coordinates: PyLength,
             ) -> Result<Self, PyErr> {
-                match model {
-                    $(ElasticModel::$name(model) => Ok(Self::$name(Py::new(
+                match constitutive_model {
+                    $(ElasticConstitutive::$name(model) => Ok(Self::$name(Py::new(
                         py,
                         $name::new(
                             $(model.getattr(stringify!($parameter))?.extract()?),+,
@@ -73,13 +74,16 @@ macro_rules! elastic_blocks {
         $(
             #[pyclass(unsendable)]
             pub struct $name {
-                block: Block<
-                    conspire::constitutive::solid::elastic::$name,
-                    LinearTetrahedron<G>,
-                    G,
+                model: FemModel<
+                    Block<
+                        conspire::constitutive::solid::elastic::$name,
+                        Tetrahedron<G>,
+                        G,
+                        M,
+                        N,
+                        P,
+                    >,
                     M,
-                    N,
-                    P,
                 >,
             }
             #[pymethods]
@@ -90,20 +94,22 @@ macro_rules! elastic_blocks {
                     connectivity: Vec<[usize; N]>,
                     reference_nodal_coordinates: PyLength,
                 ) -> PyResult<Self> {
+                    let coordinates = NodalReferenceCoordinates::try_from(&reference_nodal_coordinates)?;
+                    let block = (
+                        conspire::constitutive::solid::elastic::$name {
+                            $($parameter: $parameter.try_into()?),+
+                        },
+                        connectivity,
+                        &coordinates,
+                    )
+                        .into();
                     Ok(Self {
-                        block: (
-                            conspire::constitutive::solid::elastic::$name {
-                                $($parameter: $parameter.try_into()?),+
-                            },
-                            connectivity,
-                            &(&reference_nodal_coordinates).try_into()?,
-                        )
-                            .into(),
+                        model: (block, coordinates).into(),
                     })
                 }
                 fn nodal_forces(&self, nodal_coordinates: PyLength) -> Result<PyForce, PyErrGlue> {
                     Ok(self
-                        .block
+                        .model
                         .nodal_forces(&(&nodal_coordinates).try_into()?)?
                         .into())
                 }
@@ -112,7 +118,7 @@ macro_rules! elastic_blocks {
                     nodal_coordinates: PyLength,
                 ) -> Result<PyForcePerLength, PyErrGlue> {
                     Ok((&self
-                        .block
+                        .model
                         .nodal_stiffnesses(&(&nodal_coordinates).try_into()?)?)
                         .into())
                 }
@@ -121,7 +127,7 @@ macro_rules! elastic_blocks {
     };
 }
 
-elastic_blocks!(
+elastic_models!(
     AlmansiHamelEulerian [bulk_modulus: PyStress, shear_modulus: PyStress];
     AlmansiHamelLagrangian [bulk_modulus: PyStress, shear_modulus: PyStress];
     BazantItskovEulerian [bulk_modulus: PyStress, shear_modulus: PyStress, exponent: Scalar];
