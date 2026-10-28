@@ -3,7 +3,7 @@ use crate::{
     constitutive::solid::hyperelastic as constitutive,
     fem::{
         call_method,
-        model::elastic::{G, M, N, P},
+        solid::elastic::{G, M, N, P},
     },
     units::{PyEnergy, PyForce, PyForcePerLength, PyLength, PyStress},
 };

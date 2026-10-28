@@ -1,12 +1,12 @@
-mod model;
+mod solid;
 
 use crate::PyErrGlue;
 use crate::units::{PyEnergy, PyForce, PyForcePerLength, PyLength};
-use model::{
+use pyo3::prelude::*;
+use solid::{
     elastic::{ElasticConstitutive, ElasticModel},
     hyperelastic::{HyperelasticConstitutive, HyperelasticModel},
 };
-use pyo3::prelude::*;
 
 pub fn register_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Model>()
